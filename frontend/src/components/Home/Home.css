@@ -1,0 +1,53 @@
+.home {
+    background-color: #ffffff;
+    min-height: 100vh;
+  }
+  login-form {
+    background: white;
+    margin: 20px auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 800px;
+  }
+  
+  .logo-section img {
+    width: 100px;
+    height: auto;
+    display: flex;
+    padding: auto;
+    position: relative;
+  }
+  
+  .input-group {
+    height: auto;
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    margin-left: 130px;
+  }
+  
+  .input-group label {
+    font-size: 24px;
+    font-weight: bold;
+    min-width: 180px;
+  }
+  
+  .input-group input {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid black;
+    border-radius: 4px;
+    font-size: 18px;
+  }
+  
+  button {
+    background: #0066ff;
+    color: white;
+    border: none;
+    padding: 10px 40px;
+    border-radius: 25px;
+    font-size: 20px;
+    display: block;
+    margin: 20px auto;
+    cursor: pointer;
+  }  

@@ -1,0 +1,43 @@
+.header-container {
+    width: 100%;
+  }
+  
+  .header-banner {
+    background-color: #2b1810;
+    border: 2px solid #ff0000;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  
+  .header-banner img {
+    width: 100%;
+    max-width: 800px;
+    display: block;
+    margin: 0 auto;
+  }
+  
+  .nav-bar {
+    background-color: #ffa500;
+    margin: 20px auto;
+    padding: 15px;
+    border-radius: 25px;
+    width: 90%;
+    max-width: 800px;
+    text-align: center;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .nav-bar a {
+    color: black;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 20px;
+    padding: 0 15px;
+  }
+  
+  .divider {
+    color: black;
+    font-weight: bold;
+  }
