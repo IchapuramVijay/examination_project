@@ -1,14 +1,25 @@
 import React, { useState } from 'react';
-import './Admin.css';
+import './admin.css';
+import { useNavigate } from 'react-router-dom';
+import { adminLogin } from '../../auth/Adminauth';
+
 import collegelogo from '../../assets/collegelogo.jpg';
 
 const Admin = () => {
   const [adminId, setAdminId] = useState('');
   const [password, setPassword] = useState('');
-
+  const navigate = useNavigate();
+ 
   const handleSubmit = (e) => {
     e.preventDefault();
-  };
+    const result = adminLogin(adminId, password);
+    if (result.status === "success") {
+      localStorage.setItem('admin', JSON.stringify(result.data));
+      navigate('/admindashboard');
+    } else {
+      alert(result.message);
+    }
+  }
 
   return (
       <form className="admin-login-form" onSubmit={handleSubmit}>
