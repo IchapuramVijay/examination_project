@@ -1,13 +1,34 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './coordinator.css';
 import collegelogo from '../../assets/collegelogo.jpg';
 
 const Coordinator = () => {
  const [coordinatorId, setCoordinatorId] = useState('');
  const [password, setPassword] = useState('');
+ const navigate = useNavigate();
+
+ const employeeData = {
+  id: '123',
+  name: 'John Doe',
+  department: 'Computer Science',
+  assignedInvigilators: 5,
+};
 
  const handleSubmit = (e) => {
    e.preventDefault();
+   if (coordinatorId === employeeData.id) {
+    // On successful login, redirect to the dashboard and pass employee data
+    navigate('/cord', { state:
+       { name: employeeData.name, 
+        department: employeeData.department,
+         assignedInvigilators: employeeData.assignedInvigilators 
+        },
+       });
+  } else {
+    // Handle login failure (e.g., show an error message)
+    alert('Invalid Coordinator ID');
+  }
  };
 
  return (
