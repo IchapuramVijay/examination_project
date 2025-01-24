@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
-import Header from '../header/header';
+import { useNavigate } from 'react-router-dom';
+import { login } from '../../auth/auth';
 import './home.css';
-import rvrjcamslogo from '../../assets/rvrjcamslogo.jpg';
 import collegelogo from '../../assets/collegelogo.jpg';
 
 const Home = () => {
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const result = login(employeeId, password);
+    if (result.status === "success") {
+      localStorage.setItem('user', JSON.stringify(result.data));
+      navigate('/dashboard');
+    } else {
+      alert(result.message);
+    }
   };
 
   return (
