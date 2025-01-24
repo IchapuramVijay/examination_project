@@ -1,0 +1,53 @@
+/* src/components/Dashboard/Dashboard.css */
+.dashboard-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .dashboard-college-logo {
+    width: 100px;
+    height: auto;
+  }
+  
+  .emp-details {
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+
+  }
+  
+  .exam-info {
+    background-color: #e5e2a5;
+    padding: 15px;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 30px;
+  }
+  
+  .download-section {
+    text-align: center;
+  }
+  
+  .download-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+  }
+  
+  .download-btn:hover {
+    transform: scale(1.1);
+  }
