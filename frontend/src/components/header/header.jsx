@@ -7,7 +7,7 @@ const Header = () => (
       <div className="header-banner">
         <img src={rvrjcamslogo} alt="RVRJCAMS" />
       </div>
-      
+      <div className='nav-section'>
       <div className="nav-bar">
         <a href="#Home">Home</a>
         <span className="divider">|</span>
@@ -18,6 +18,7 @@ const Header = () => (
         <a href="#coordinator">coordinator</a>
         <span className="divider">|</span>
         <a href="#contact">contant</a>
+      </div>
       </div>
     </div>
   );
