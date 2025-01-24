@@ -6,6 +6,7 @@ import './App.css';
 import Admin from './components/Admin/adminpage';
 import Coordinator from './components/Coordinator/coordinator';
 import EmployeeDashboard from './components/Dashboards/Employee/Employeedashboard';
+import AdminDashboard from './components/Dashboards/Admindb/Admindashboard';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/coordinator" element={<Coordinator />} />
           <Route path="/dashboard" element={<EmployeeDashboard />} />
+          <Route path="/admindashboard" element={<AdminDashboard />} />
 
         </Routes>
     </div>

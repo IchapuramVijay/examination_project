@@ -13,30 +13,30 @@ const EmployeeDashboard = () => {
  };
 
  return (
-   <div className="dashboard-container">
-     <div className="user-info">
-       <div className="college-logo-container">
-         <img src={collegelogo} alt="College Logo" className="dashboard-college-logo" />
-       </div>
-       <div className="emp-details">
-         <p>Emp Name: {user?.name}</p>
-         <p>Dept: {user?.department}</p>
-       </div>
-     </div>
-
-     <div className="exam-info">
-       <h2>3rd year regular and supply examination 24-25</h2>
-       <h3>Room and Staff Allocation</h3>
-     </div>
-
-     <div className="download-section">
-       <p>Invigilators and rooms allocation list for exams</p>
-       <button onClick={handleDownload} className="download-btn">
-         <FaDownload size={30} color="green" />
-       </button>
-     </div>
-   </div>
- );
-};
-
+    <div className="dashboard-container">
+      <div className="header-section">
+        <div className="logo-section">
+          <img src={collegelogo} alt="College Logo" className="dashboard-college-logo" />
+        </div>
+        <div className="info-section">
+          <div className="emp-details">
+            <p>Emp Name: {user?.name}</p>
+            <p>Dept: {user?.department}</p>
+          </div>
+          <div className="exam-info">
+            <h2>3rd year regular and supply examination 24-25</h2>
+            <h3>Room and Staff Allocation</h3>
+          </div>
+        </div>
+      </div>
+ 
+      <div className="download-section">
+        <p>Invigilators and rooms allocation list for exams</p>
+        <button onClick={handleDownload} className="download-btn">
+          <FaDownload size={30} color="green" />
+        </button>
+      </div>
+    </div>
+  );
+ };
 export default EmployeeDashboard;

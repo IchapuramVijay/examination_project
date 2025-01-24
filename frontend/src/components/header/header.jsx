@@ -18,7 +18,7 @@ const Header = () => (
         <span className="divider">|</span>
         <Link to="/coordinator">Coordinator</Link>
         <span className="divider">|</span>
-        <Link to ="/Contact">Contant</Link>
+        <Link to ="/Contact">Contact</Link>
       </div>
       </div>
     </div>
