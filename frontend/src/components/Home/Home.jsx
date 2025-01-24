@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Header from '../header/header';
-import './Home.css';
+import './home.css';
 import rvrjcamslogo from '../../assets/rvrjcamslogo.jpg';
 import collegelogo from '../../assets/collegelogo.jpg';
 

@@ -1,9 +1,9 @@
-.admin-page {
+.coordinator-page {
     background-color: #ffffff;
     min-height: 100vh;
 }
 
-.admin-login-form {
+.coordinator-login-form {
     display: flex;
     padding: 40px;
     background: white;
@@ -14,24 +14,24 @@
     gap: 30px;
 }
 
-.admin-college-logo {
+.coordinator-college-logo {
     width: 150px;
     height: auto;
 }
 
-.admin-form-content {
+.coordinator-form-content {
     flex: 1;
     margin-top: 20px;
     margin-left: 0px;
 }
 
-.admin-form-group {
+.coordinator-form-group {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.admin-form-group label {
+.coordinator-form-group label {
     font-size: 24px;
     font-weight: bold;
     min-width: 180px;
@@ -39,7 +39,7 @@
     font-size: x-large;
 }
 
-.admin-form-group input {
+.coordinator-form-group input {
     color: red;
     width: 400px;
     padding: 12px;
@@ -50,7 +50,7 @@
     height: max-content;
 }
 
-.admin-submit-btn {
+.coordinator-submit-btn {
     background: green;
     color: white;
     border: none;

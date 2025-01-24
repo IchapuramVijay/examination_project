@@ -12,11 +12,11 @@ const Header = () => (
       <div className="nav-bar">
         <Link to ="/">Home</Link>
         <span className="divider">|</span>
-        <Link to="/Admin">Admin</Link>
+        <Link to ="/admin">Admin </Link>
         <span className="divider">|</span>
-        <Link to ="/Employee">Employee </Link>
+        <Link to ="/employee">Employee </Link>
         <span className="divider">|</span>
-        <Link to="/Coordinator">Coordinator</Link>
+        <Link to="/coordinator">Coordinator</Link>
         <span className="divider">|</span>
         <Link to ="/Contact">Contant</Link>
       </div>
