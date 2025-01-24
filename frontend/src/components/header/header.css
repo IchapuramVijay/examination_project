@@ -1,6 +1,10 @@
 .header-container {
     width: 100%;
   }
+.nav-section {
+    background-color: #0000cc;
+    padding: 20px 0;
+  }
   
   .header-banner {
     background-color: #2b1810;
