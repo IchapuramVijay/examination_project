@@ -6,6 +6,7 @@ import './App.css';
 import Admin from './components/Admin/adminpage';
 import Coordinator from './components/Coordinator/coordinator';
 import EmployeeDashboard from './components/Dashboards/Employee/Employeedashboard';
+import AdminDashboard from './components/Dashboards/Admindb/Admindashboard';
 import Cord from './components/cord/cord';
 
 function App() {
@@ -18,9 +19,9 @@ function App() {
           <Route path="/employee" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/dashboard" element={<EmployeeDashboard />} />
+          <Route path="/admindashboard" element={<AdminDashboard />} />
           <Route path="/coordinator" element={<Coordinator />} />
           <Route path="/cord" element={<Cord />} />
-
         </Routes>
     </div>
     </BrowserRouter>
