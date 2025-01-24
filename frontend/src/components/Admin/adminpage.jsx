@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Admin.css';
+import './admin.css';
 import collegelogo from '../../assets/collegelogo.jpg';
 
 const Admin = () => {
