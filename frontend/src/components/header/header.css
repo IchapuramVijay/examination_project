@@ -35,7 +35,7 @@
     align-items: center;
   }
   
-  .nav-bar a {
+  .nav-bar Link {
     color: black;
     text-decoration: none;
     font-weight: bold;
@@ -45,7 +45,7 @@
   
   .divider {
     color: black;
-    font-weight: bold;
-    font-size:x-large;
+    font-weight:bolder;
+    font-size:xx-large;
 
   }

@@ -1,6 +1,7 @@
 import React from 'react';
 import  './header.css';
 import rvrjcamslogo from '../../assets/rvrjcamslogo.jpg';
+import { Link } from 'react-router-dom';
 
 const Header = () => (
     <div className="header-container">
@@ -9,15 +10,15 @@ const Header = () => (
       </div>
       <div className='nav-section'>
       <div className="nav-bar">
-        <a href="#Home">Home</a>
+        <Link to ="/">Home</Link>
         <span className="divider">|</span>
-        <a href="#admin">Admin</a>
+        <Link to="/Admin">Admin</Link>
         <span className="divider">|</span>
-        <a href="#">Employee Login</a>
+        <Link to ="/Employee">Employee </Link>
         <span className="divider">|</span>
-        <a href="#coordinator">coordinator</a>
+        <Link to="/Coordinator">Coordinator</Link>
         <span className="divider">|</span>
-        <a href="#contact">contant</a>
+        <Link to ="/Contact">Contant</Link>
       </div>
       </div>
     </div>

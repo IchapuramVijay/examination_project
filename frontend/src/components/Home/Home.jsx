@@ -13,33 +13,28 @@ const Home = () => {
   };
 
   return (
-    <div className="home">
-      <Header />
-      <div className="login-form">
-        <form onSubmit={handleSubmit}>
-          <div className="logo-section">
-            <img src={collegelogo} alt="College Logo" />
-          </div>
-          <div className="input-group">
-            <label>Employee id :</label>
-            <input
-              type="text"
-              value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <label>Password :</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button type="submit">Submit</button>
-        </form>
+      <form className="login-form" onSubmit={handleSubmit}>
+      <img src={collegelogo} alt="College Logo" className="college-logo" />
+      <div className="form-content">
+        <div className="form-group">
+          <label>Employee id :</label>
+          <input
+            type="text"
+            value={employeeId}
+            onChange={(e) => setEmployeeId(e.target.value)}
+          />
+        </div>
+        <div className="form-group">
+          <label>Password :</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        <button type="submit" className="submit-btn">Submit</button>
       </div>
-    </div>
+    </form>
   );
 };
 
