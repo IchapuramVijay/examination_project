@@ -1,0 +1,64 @@
+.exam-page {
+    background-color: #ffffff;
+    min-height: 100vh;
+}
+
+.exam-login-form {
+    display: flex;
+    padding: 40px;
+    background: white;
+    margin: 20px auto;
+    width: 90%;
+    max-width: 1000px;
+    align-items: flex-start;
+    gap: 30px;
+}
+
+.exam-college-logo {
+    width: 150px;
+    height: auto;
+}
+
+.exam-form-content {
+    flex: 1;
+    margin-top: 20px;
+    margin-left: 0px;
+}
+
+.exam-form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.exam-form-group label {
+    font-size: 24px;
+    font-weight: bold;
+    min-width: 180px;
+    text-align: center;
+    font-size: x-large;
+}
+
+.exam-form-group input {
+    color: red;
+    width: 400px;
+    padding: 12px;
+    border: 3px solid black;
+    border-radius: 15px;
+    font-weight: bolder;
+    font-size: 24px;
+    height: max-content;
+}
+
+.exam-submit-btn {
+    background: green;
+    color: white;
+    border: none;
+    padding: 12px 50px;
+    border-radius: 15px;
+    font-size: 20px;
+    display: block;
+    margin-top: 60px;
+    cursor: pointer;
+    margin-left: 300px;
+}
