@@ -18,6 +18,8 @@ const Header = () => (
         <span className="divider">|</span>
         <Link to="/coordinator">Coordinator</Link>
         <span className="divider">|</span>
+        <Link to ="/examsectionlogin">Exam Section</Link>
+        <span className="divider">|</span>
         <Link to ="/Contact">Contact</Link>
       </div>
       </div>
