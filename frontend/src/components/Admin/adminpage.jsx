@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './admin.css';
 import { useNavigate } from 'react-router-dom';
 import { adminLogin } from '../../auth/Adminauth';
+
 import collegelogo from '../../assets/collegelogo.jpg';
 
 const Admin = () => {
