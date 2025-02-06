@@ -1,38 +1,38 @@
 import React, { useState } from 'react';
+import './Examsection.css';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../auth/auth';
-import './home.css';
+import { examEmployeeLogin } from '../../auth/Examsectionauth';
 import collegelogo from '../../assets/collegelogo.jpg';
 
-const Home = () => {
+const ExamSectionEmployee = () => {
   const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-
+ 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const result = login(employeeId, password);
+    const result = examEmployeeLogin(employeeId, password);
     if (result.status === "success") {
-      localStorage.setItem('user', JSON.stringify(result.data));
-      navigate('/dashboard');
+      localStorage.setItem('examEmployee', JSON.stringify(result.data));
+      navigate('/examsectiondashboard');
     } else {
       alert(result.message);
     }
-  };
+  }
 
   return (
-      <form className="login-form" onSubmit={handleSubmit}>
-      <img src={collegelogo} alt="College Logo" className="college-logo" />
-      <div className="form-content">
-        <div className="form-group">
-          <label>Employee id :</label>
+    <form className="exam-login-form" onSubmit={handleSubmit}>
+      <img src={collegelogo} alt="College Logo" className="exam-college-logo" />
+      <div className="exam-form-content">
+        <div className="exam-form-group">
+          <label>Examsection :</label>
           <input
             type="text"
             value={employeeId}
             onChange={(e) => setEmployeeId(e.target.value)}
           />
         </div>
-        <div className="form-group">
+        <div className="exam-form-group">
           <label>Password :</label>
           <input
             type="password"
@@ -40,10 +40,10 @@ const Home = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        <button type="submit" className="submit-btn">Submit</button>
+        <button type="submit" className="exam-submit-btn">Submit</button>
       </div>
     </form>
   );
 };
 
-export default Home;
+export default ExamSectionEmployee;

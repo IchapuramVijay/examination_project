@@ -5,7 +5,31 @@ import * as XLSX from 'xlsx';
 
 const Cord = () => {
   const location = useLocation();
-  const { name, department, assignedInvigilators } = location.state || {}; // Get the passed name, department, and invigilators
+  const { name, department, assignedInvigilators } = location.state || {};
+
+  const handleDownloadInvigilators = () => {
+    const storedData = JSON.parse(localStorage.getItem('invigilatorData'));
+    if (!storedData) {
+      alert('No invigilator data available');
+      return;
+    }
+
+    // Convert data to CSV format
+    const headers = Object.keys(storedData.branchData).join(',') + ',Total Invigilators,Upload Date\n';
+    const values = Object.values(storedData.branchData).join(',') + 
+      ',' + storedData.totalInvigilators + 
+      ',' + new Date(storedData.uploadDate).toLocaleString() + '\n';
+    
+    const csvContent = headers + values;
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'invigilator_requirements.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handleDownloadInvigilators = () => {
     const storedData = JSON.parse(localStorage.getItem('invigilatorData'));
@@ -50,7 +74,9 @@ const Cord = () => {
           <h2>Actions</h2>
           <div className="action-buttons">
             <div className="invigilators-download">
-              <button className="action-btn">Download Invigilator File</button>
+              <button className="action-btn" onClick={handleDownloadInvigilators}>
+                Download Invigilator File
+              </button>
               <p className="assigned-count">{assignedInvigilators} Invigilators</p>
             </div>
             <button className="action-btn">Download Rooms & Students</button>
