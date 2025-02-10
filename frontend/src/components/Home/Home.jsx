@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../auth/auth';
-import './home.css';
+import './Home.css';
 import collegelogo from '../../assets/collegelogo.jpg';
 
 const Home = () => {

@@ -1,52 +1,70 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FaUpload, FaDownload } from 'react-icons/fa';
 import './cord.css';
-import * as XLSX from 'xlsx';
 
 const Cord = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const { name, department, assignedInvigilators } = location.state || {};
 
-  const handleDownloadInvigilators = () => {
-    const storedData = JSON.parse(localStorage.getItem('invigilatorData'));
-    if (!storedData) {
-      alert('No invigilator data available');
+  const handleDownloadExamSchedule = () => {
+    const storedSchedule = localStorage.getItem('examSchedule');
+    if (!storedSchedule) {
+      alert('No exam schedule data available');
       return;
     }
+    const scheduleData = JSON.parse(storedSchedule);
+    downloadFile(scheduleData.csvContent, 'exam_schedule.csv');
+  };
 
-    // Convert data to CSV format
-    const headers = Object.keys(storedData.branchData).join(',') + ',Total Invigilators,Upload Date\n';
-    const values = Object.values(storedData.branchData).join(',') + 
-      ',' + storedData.totalInvigilators + 
-      ',' + new Date(storedData.uploadDate).toLocaleString() + '\n';
-    
-    const csvContent = headers + values;
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+  const handleDownloadAvailableRooms = () => {
+    const storedRooms = localStorage.getItem('availableRoomsList');
+    if (!storedRooms) {
+      alert('No available rooms list found. Please wait for admin to upload the list.');
+      return;
+    }
+    const roomsData = JSON.parse(storedRooms);
+    downloadFile(roomsData.content, roomsData.filename || 'available_rooms.csv');
+  };
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.name.endsWith('.csv')) {
+        alert('Please upload a CSV file');
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        localStorage.setItem('finalRoomAllocation', JSON.stringify({
+          content: text,
+          uploadDate: new Date().toISOString(),
+          filename: file.name
+        }));
+        alert('Final room allocation uploaded successfully!');
+      } catch (error) {
+        alert('Error uploading file. Please try again.');
+        console.error('Upload error:', error);
+      }
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const downloadFile = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'invigilator_requirements.csv';
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleDownloadInvigilators = () => {
-    const storedData = JSON.parse(localStorage.getItem('invigilatorData'));
-    if (!storedData) {
-      alert('No invigilator data available');
-      return;
-    }
-
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet([
-      { ...storedData.branchData, 
-        'Total Invigilators': storedData.totalInvigilators,
-        'Upload Date': new Date(storedData.uploadDate).toLocaleString() 
-      }
-    ]);
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Invigilators');
-    XLSX.writeFile(workbook, 'invigilator_requirements.xlsx');
   };
 
   return (
@@ -73,14 +91,27 @@ const Cord = () => {
         <div className="actions">
           <h2>Actions</h2>
           <div className="action-buttons">
-            <div className="invigilators-download">
-              <button className="action-btn" onClick={handleDownloadInvigilators}>
-                Download Invigilator File
+            <button className="action-btn" onClick={handleDownloadExamSchedule}>
+              Download Exam Schedule
+            </button>
+            <button className="action-btn" onClick={() => navigate('/available-employees')}>
+              Add Available Employees
+            </button>
+            <button className="action-btn" onClick={handleDownloadAvailableRooms}>
+              Download Available Rooms List
+            </button>
+            <div className="upload-section">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".csv"
+                style={{ display: 'none' }}
+              />
+              <button className="action-btn" onClick={triggerFileInput}>
+                <FaUpload className="mr-2" /> Upload Final Room Allocation
               </button>
-              <p className="assigned-count">{assignedInvigilators} Invigilators</p>
             </div>
-            <button className="action-btn">Download Rooms & Students</button>
-            <button className="action-btn">Upload Invigilator Allocated File</button>
           </div>
         </div>
       </div>
