@@ -3,7 +3,7 @@ export const examEmployeeLogin = (employeeId, password) => {
         return { 
             status: "success", 
             data: { 
-                name: "Exam Employee", 
+                name: "Exam Section User", 
                 department: "Examination Section" 
             } 
         };

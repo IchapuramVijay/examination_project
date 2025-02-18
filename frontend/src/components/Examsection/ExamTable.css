@@ -1,0 +1,81 @@
+.invigilator-schedule-wrapper {
+    margin: 20px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.invigilator-table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.invigilator-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 2px solid #ddd;
+}
+
+.invigilator-schedule-table th,
+.invigilator-schedule-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+}
+
+.invigilator-branch-header,
+.invigilator-time-slot {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    color: #333;
+    font-size: 15px;
+}
+
+.invigilator-branch-cell {
+    background-color: #f8f8f8;
+    font-weight: bold;
+    color: #333;
+}
+
+.invigilator-input-cell {
+    padding: 8px;
+}
+
+.invigilator-input {
+    width: 60px;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.invigilator-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 3px rgba(74,144,226,0.3);
+}
+
+.invigilator-input::placeholder {
+    color: #999;
+}
+
+.invigilator-submit-btn {
+    display: block;
+    width: 200px;
+    margin: 20px auto 0;
+    padding: 12px 0;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.invigilator-submit-btn:hover {
+    background-color: #45a049;
+}
