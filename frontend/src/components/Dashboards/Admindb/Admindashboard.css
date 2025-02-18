@@ -1,64 +1,59 @@
-/* Admindashboard.css */
 .admin-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #f8f9fa;
   min-height: 100vh;
-  background-color: #f5f7fa;
-  padding: 30px;
 }
 
-.admin-header {
+.admin-details {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  background: white;
+  background-color: #ffffff;
+  padding: 1.5rem 2rem;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 30px;
+  margin-bottom: 2rem;
 }
 
-.admin-info {
-  display: flex;
-  gap: 30px;
-}
-
-.admin-info span {
-  font-size: 16px;
+.admin-details span {
+  font-size: 1.1rem;
   color: #2c3e50;
   font-weight: 500;
 }
 
 .exam-info {
-  padding: 25px;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  padding: 2rem;
   border-radius: 10px;
-  margin-bottom: 30px;
-  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .exam-info h2 {
-  font-size: 24px;
-  margin: 0;
-  margin-bottom: 10px;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .exam-info h3 {
-  font-size: 18px;
-  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 400;
   opacity: 0.9;
 }
 
 .admin-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 25px;
-  padding: 10px;
+  gap: 2rem;
 }
 
 .action-card {
   background: white;
-  padding: 25px;
   border-radius: 10px;
+  padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -69,75 +64,123 @@
 }
 
 .action-card h3 {
-  margin: 0;
-  margin-bottom: 20px;
   color: #2c3e50;
-  font-size: 18px;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
   font-weight: 600;
 }
 
 .action-buttons {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  gap: 15px;
+  gap: 1rem;
 }
 
-.download-icon {
-  color: #2a5298;
-  font-size: 24px;
-  cursor: pointer;
-  transition: color 0.2s ease;
+.dropdown-container {
+  position: relative;
+  flex: 1;
 }
 
-.download-icon:hover {
-  color: #1e3c72;
-}
-
-.admin-download-btn {
+.dropdown-button {
   width: 100%;
-  padding: 12px 20px;
-  background: #2a5298;
+  padding: 0.8rem 1.2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 6px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.admin-download-btn:hover {
-  background: #1e3c72;
+.dropdown-button:hover {
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4494 100%);
 }
 
-.admin-download-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  z-index: 1000;
 }
 
-@media (max-width: 768px) {
-  .admin-dashboard {
-      padding: 15px;
-  }
+.dropdown-item {
+  padding: 0.8rem 1.2rem;
+  color: #2c3e50;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-weight: 500;
+}
 
-  .admin-header {
-      flex-direction: column;
-      gap: 15px;
-      text-align: center;
-  }
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: #667eea;
+}
 
-  .admin-info {
-      flex-direction: column;
-      gap: 10px;
-      align-items: center;
-  }
+.selected-branch-info {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
 
-  .action-card {
-      padding: 20px;
-  }
+.employee-list {
+  margin-top: 1rem;
+}
+
+.employee-list h5 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.employee-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.employee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  background: white;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.employee-item:hover {
+  transform: translateX(5px);
+}
+
+.upload-icon, .download-icon {
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.upload-icon {
+  color: #e74c3c;
+}
+
+.download-icon {
+  color: #2ecc71;
+}
+
+.upload-icon:hover, .download-icon:hover {
+  transform: scale(1.1);
 }

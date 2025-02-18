@@ -1,117 +1,245 @@
-import React, { useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { FaUpload, FaDownload } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './cord.css';
 
 const Cord = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
-  const { name, department, assignedInvigilators } = location.state || {};
+  const [userData, setUserData] = useState(null);
+  const [employeeDetails, setEmployeeDetails] = useState({
+    employeeId: '',
+    name: '',
+    designation: ''
+  });
+  const [employeeList, setEmployeeList] = useState([]);
 
-  const handleDownloadExamSchedule = () => {
-    const storedSchedule = localStorage.getItem('examSchedule');
-    if (!storedSchedule) {
-      alert('No exam schedule data available');
+  useEffect(() => {
+    const checkAuth = () => {
+      const coordinatorData = localStorage.getItem('coordinatorData');
+      if (!coordinatorData) {
+        return false;
+      }
+      const data = JSON.parse(coordinatorData);
+      return data.isAuthenticated && data.branch;
+    };
+
+    if (!checkAuth()) {
+      navigate('/coordinator', { replace: true });
       return;
     }
-    const scheduleData = JSON.parse(storedSchedule);
-    downloadFile(scheduleData.csvContent, 'exam_schedule.csv');
+
+    const data = JSON.parse(localStorage.getItem('coordinatorData'));
+    setUserData(data);
+
+    // Load existing employee list
+    const savedEmployees = localStorage.getItem(`employees_${data.branch}`);
+    if (savedEmployees) {
+      setEmployeeList(JSON.parse(savedEmployees));
+    }
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEmployeeDetails(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleDownloadAvailableRooms = () => {
-    const storedRooms = localStorage.getItem('availableRoomsList');
-    if (!storedRooms) {
-      alert('No available rooms list found. Please wait for admin to upload the list.');
+  const handleLogout = () => {
+    localStorage.removeItem('coordinatorData');
+    navigate('/coordinator', { replace: true });
+  };
+
+  const handleAddEmployee = () => {
+    if (!employeeDetails.employeeId || !employeeDetails.name || !employeeDetails.designation) {
+      alert('Please fill all the fields');
       return;
     }
-    const roomsData = JSON.parse(storedRooms);
-    downloadFile(roomsData.content, roomsData.filename || 'available_rooms.csv');
-  };
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      if (!file.name.endsWith('.csv')) {
-        alert('Please upload a CSV file');
-        return;
-      }
-
-      try {
-        const text = await file.text();
-        localStorage.setItem('finalRoomAllocation', JSON.stringify({
-          content: text,
-          uploadDate: new Date().toISOString(),
-          filename: file.name
-        }));
-        alert('Final room allocation uploaded successfully!');
-      } catch (error) {
-        alert('Error uploading file. Please try again.');
-        console.error('Upload error:', error);
-      }
+    if (employeeList.some(emp => emp.employeeId === employeeDetails.employeeId)) {
+      alert('Employee ID already exists');
+      return;
     }
+
+    const newList = [...employeeList, {
+      ...employeeDetails,
+      department: userData.branch
+    }];
+
+    setEmployeeList(newList);
+    localStorage.setItem(`employees_${userData.branch}`, JSON.stringify(newList));
+
+    setEmployeeDetails({
+      employeeId: '',
+      name: '',
+      designation: ''
+    });
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
+  const handleRemoveEmployee = (index) => {
+    const newList = employeeList.filter((_, i) => i !== index);
+    setEmployeeList(newList);
+    localStorage.setItem(`employees_${userData.branch}`, JSON.stringify(newList));
   };
 
-  const downloadFile = (content, filename) => {
-    const blob = new Blob([content], { type: 'text/csv' });
+  const handleSubmitEmployees = () => {
+    if (employeeList.length === 0) {
+      alert('Please add at least one employee');
+      return;
+    }
+
+    const headers = ['Employee ID', 'Name', 'Department', 'Designation'];
+    const csvData = employeeList.map(emp => [
+      emp.employeeId,
+      emp.name,
+      emp.department,
+      emp.designation
+    ]);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.join(','))
+      .join('\n');
+    
+    localStorage.setItem(`employeesCSV_${userData.branch}`, csvContent);
+    localStorage.setItem(`availableEmployees_${userData.branch}`, JSON.stringify(employeeList));
+    
+    alert('Employee details have been submitted successfully');
+  };
+
+  const handleExamScheduleDownload = () => {
+    const examSchedule = localStorage.getItem('examSchedule');
+    if (!examSchedule) {
+      alert('No exam schedule available at this time');
+      return;
+    }
+
+    const blob = new Blob([examSchedule], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = filename;
+    link.download = 'exam_schedule.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
+  if (!userData) return null;
+
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <h1>Welcome, {name}</h1>
-        <p className="subheading">Coordinator Dashboard</p>
+    <div className="coordinator-panel">
+      <div className="main-header">
+        <h1>Coordinator Panel - {userData.branch}</h1>
+        <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
 
-      <div className="dashboard-content">
-        <div className="employee-info">
-          <h2>Employee Details</h2>
-          <div className="info-item">
-            <strong>Name:</strong> {name}
-          </div>
-          <div className="info-item">
-            <strong>Department:</strong> {department}
-          </div>
-          <div className="info-item">
-            <strong>Assigned Invigilators:</strong> {assignedInvigilators}
-          </div>
-        </div>
-
-        <div className="actions">
-          <h2>Actions</h2>
-          <div className="action-buttons">
-            <button className="action-btn" onClick={handleDownloadExamSchedule}>
-              Download Required Employees
-            </button>
-            <button className="action-btn" onClick={() => navigate('/available-employees')}>
-              Add Available Employees
-            </button>
-            <button className="action-btn" onClick={handleDownloadAvailableRooms}>
-              Download Available Rooms List
-            </button>
-            <div className="upload-section">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                accept=".csv"
-                style={{ display: 'none' }}
-              />
-              <button className="action-btn" onClick={triggerFileInput}>
-                <FaUpload className="mr-2" /> Upload Final Room Allocation
+      <div className="content-section">
+        <div className="staff-management-card">
+          <h2>Staff Availability Management</h2>
+          <div className="employee-form-container">
+            <div className="employee-form-grid">
+              <div className="form-group">
+                <label htmlFor="employeeId">Employee ID</label>
+                <input
+                  id="employeeId"
+                  type="text"
+                  name="employeeId"
+                  value={employeeDetails.employeeId}
+                  onChange={handleInputChange}
+                  placeholder="Enter ID"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="name">Name</label>
+                <input
+                  id="name"
+                  type="text"
+                  name="name"
+                  value={employeeDetails.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter name"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="designation">Designation</label>
+                <input
+                  id="designation"
+                  type="text"
+                  name="designation"
+                  value={employeeDetails.designation}
+                  onChange={handleInputChange}
+                  placeholder="Enter designation"
+                />
+              </div>
+            </div>
+            <div className="form-buttons">
+              <button 
+                className="action-button add-button"
+                onClick={handleAddEmployee}
+              >
+                Add Employee
               </button>
             </div>
+          </div>
+
+          {employeeList.length > 0 && (
+            <div className="employee-table-container">
+              <h3>Added Employees</h3>
+              <div className="table-wrapper">
+                <table className="employee-table">
+                  <thead>
+                    <tr>
+                      <th>Employee ID</th>
+                      <th>Name</th>
+                      <th>Department</th>
+                      <th>Designation</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employeeList.map((emp, index) => (
+                      <tr key={index}>
+                        <td>{emp.employeeId}</td>
+                        <td>{emp.name}</td>
+                        <td>{userData.branch}</td>
+                        <td>{emp.designation}</td>
+                        <td>
+                          <button 
+                            className="remove-button"
+                            onClick={() => handleRemoveEmployee(index)}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="submit-button-container">
+                <button 
+                  className="action-button submit-button"
+                  onClick={handleSubmitEmployees}
+                >
+                  Submit All Employees
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="exam-schedule-card">
+          <h2>Examination Schedule</h2>
+          <div className="schedule-content">
+            <p className="description">
+              Access and download the current examination schedule.
+            </p>
+            <button 
+              className="action-button"
+              onClick={handleExamScheduleDownload}
+            >
+              Download Schedule
+            </button>
           </div>
         </div>
       </div>

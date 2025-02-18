@@ -4,57 +4,72 @@ import './coordinator.css';
 import collegelogo from '../../assets/collegelogo.jpg';
 
 const Coordinator = () => {
- const [coordinatorId, setCoordinatorId] = useState('');
- const [password, setPassword] = useState('');
- const navigate = useNavigate();
+  const [coordinatorId, setCoordinatorId] = useState('');
+  const [password, setPassword] = useState('');
+  const [branch, setBranch] = useState('');
+  const navigate = useNavigate();
 
- const employeeData = {
-  id: '123',
-  name: 'John Doe',
-  department: 'Computer Science',
-  assignedInvigilators: 5,
-};
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (coordinatorId === '123' && password === '123') {
+      const userData = {
+        id: coordinatorId,
+        branch: branch,
+        isAuthenticated: true
+      };
+      localStorage.setItem('coordinatorData', JSON.stringify(userData));
+      navigate('/cord');
+    } else {
+      alert('Invalid credentials. Use ID: 123, Password: 123');
+    }
+  };
 
- const handleSubmit = (e) => {
-   e.preventDefault();
-   if (coordinatorId === employeeData.id) {
-    // On successful login, redirect to the dashboard and pass employee data
-    navigate('/cord', { state:
-       { name: employeeData.name, 
-        department: employeeData.department,
-         assignedInvigilators: employeeData.assignedInvigilators 
-        },
-       });
-  } else {
-    // Handle login failure (e.g., show an error message)
-    alert('Invalid Coordinator ID');
-  }
- };
-
- return (
-     <form className="coordinator-login-form" onSubmit={handleSubmit}>
-     <img src={collegelogo} alt="College Logo" className="coordinator-college-logo" />
-     <div className="coordinator-form-content">
-       <div className="coordinator-form-group">
-         <label>Coordinator id :</label>
-         <input
-           type="text"
-           value={coordinatorId}
-           onChange={(e) => setCoordinatorId(e.target.value)}
-         />
-       </div>
-       <div className="coordinator-form-group">
-         <label>Password :</label>
-         <input
-           type="password"
-           value={password}
-           onChange={(e) => setPassword(e.target.value)}
-         />
-       </div>
-       <button type="submit" className="coordinator-submit-btn">Submit</button>
-     </div>
-   </form>
- );
+  return (
+    <div className="login-page">
+      <form className="login-form" onSubmit={handleSubmit}>
+        <div className="logo-section">
+          <img src={collegelogo} alt="College Logo" className="college-logo" />
+        </div>
+        <div className="form-section">
+          <div className="form-row">
+            <label>Coordinator id :</label>
+            <input
+              type="text"
+              value={coordinatorId}
+              onChange={(e) => setCoordinatorId(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-row">
+            <label>Password :</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-row">
+            <label>Branch :</label>
+            <select
+              value={branch}
+              onChange={(e) => setBranch(e.target.value)}
+              required
+              className="branch-select"
+            >
+              <option value="">Select Branch</option>
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="EEE">EEE</option>
+              <option value="CIVIL">CIVIL</option>
+              <option value="MECH">MECH</option>
+            </select>
+          </div>
+          <button type="submit" className="submit-btn">Submit</button>
+        </div>
+      </form>
+    </div>
+  );
 };
 
 export default Coordinator;

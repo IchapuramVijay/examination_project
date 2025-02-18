@@ -1,64 +1,95 @@
-.coordinator-page {
-    background-color: #ffffff;
+.login-page {
     min-height: 100vh;
+    background: #ffffff;
+    padding: 20px;
 }
 
-.coordinator-login-form {
+.login-form {
     display: flex;
-    padding: 40px;
-    background: white;
-    margin: 20px auto;
-    width: 90%;
-    max-width: 1000px;
-    align-items: flex-start;
-    gap: 30px;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    gap: 60px;
 }
 
-.coordinator-college-logo {
+.logo-section {
+    flex-shrink: 0;
+}
+
+.college-logo {
     width: 150px;
     height: auto;
 }
 
-.coordinator-form-content {
+.form-section {
     flex: 1;
-    margin-top: 20px;
-    margin-left: 0px;
+    padding-top: 20px;
 }
 
-.coordinator-form-group {
+.form-row {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.coordinator-form-group label {
-    font-size: 24px;
-    font-weight: bold;
-    min-width: 180px;
-    text-align: center;
-    font-size: x-large;
+.form-row label {
+    width: 120px;
+    font-size: 16px;
+    color: #000;
+    text-align: left;
 }
 
-.coordinator-form-group input {
-    color: red;
-    width: 400px;
-    padding: 12px;
-    border: 3px solid black;
-    border-radius: 15px;
-    font-weight: bolder;
-    font-size: 24px;
-    height: max-content;
+.form-row input,
+.form-row select {
+    width: 250px;
+    height: 35px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
 }
 
-.coordinator-submit-btn {
+.branch-select {
+    appearance: none;
+    background-color: white;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+}
+
+.submit-btn {
     background: green;
     color: white;
     border: none;
-    padding: 12px 50px;
-    border-radius: 15px;
-    font-size: 20px;
-    display: block;
-    margin-top: 60px;
+    padding: 8px 30px;
+    border-radius: 4px;
+    font-size: 16px;
     cursor: pointer;
-    margin-left: 300px;
+    display: block;
+    margin: 30px auto 0;
+}
+
+@media (max-width: 768px) {
+    .login-form {
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .form-row label {
+        margin-bottom: 5px;
+    }
+
+    .form-row input,
+    .form-row select {
+        width: 100%;
+    }
 }
