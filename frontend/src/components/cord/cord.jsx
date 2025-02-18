@@ -92,7 +92,7 @@ const Cord = () => {
           <h2>Actions</h2>
           <div className="action-buttons">
             <button className="action-btn" onClick={handleDownloadExamSchedule}>
-              Download Exam Schedule
+              Download Required Employees
             </button>
             <button className="action-btn" onClick={() => navigate('/available-employees')}>
               Add Available Employees
