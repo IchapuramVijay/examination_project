@@ -1,4 +1,4 @@
-// Updated EmployeeDashboard.jsx to show room allocation
+// src/components/Dashboard/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { FaDownload } from 'react-icons/fa';
 import collegelogo from '../../../assets/collegelogo.jpg';
@@ -47,11 +47,11 @@ const EmployeeDashboard = () => {
          
          // Find the current user's allocation
          const userAsSenior = parsedData.find(item => 
-           item.seniorProfessor.includes(user.name)
+           item.seniorProfessor && item.seniorProfessor.includes(user.name)
          );
          
          const userAsJunior = parsedData.find(item => 
-           item.juniorProfessor.includes(user.name)
+           item.juniorProfessor && item.juniorProfessor.includes(user.name)
          );
          
          if (userAsSenior) {
@@ -79,24 +79,23 @@ const EmployeeDashboard = () => {
  }, [user]);
 
  const handleDownload = () => {
-   // Download allocation data as CSV
-   if (allocationData) {
-     const headers = 'Room,Block,Senior Professor,Junior Professor\n';
-     const csvRows = allocationData.map(item => 
-       `${item.room},${item.block},${item.seniorProfessor},${item.juniorProfessor}`
-     );
-     
-     const csvContent = headers + csvRows.join('\n');
-     const blob = new Blob([csvContent], { type: 'text/csv' });
-     const url = window.URL.createObjectURL(blob);
-     const link = document.createElement('a');
-     link.href = url;
-     link.download = 'room_allocation.csv';
-     document.body.appendChild(link);
-     link.click();
-     document.body.removeChild(link);
-     URL.revokeObjectURL(url);
+   // Get the room allocation file directly from localStorage
+   const allocData = localStorage.getItem('finalRoomAllocation');
+   if (!allocData) {
+     alert('No room allocation data available');
+     return;
    }
+
+   // Create a blob and download it
+   const blob = new Blob([allocData], { type: 'text/csv' });
+   const url = window.URL.createObjectURL(blob);
+   const link = document.createElement('a');
+   link.href = url;
+   link.download = 'room_allocation.csv';
+   document.body.appendChild(link);
+   link.click();
+   document.body.removeChild(link);
+   URL.revokeObjectURL(url);
  };
 
  return (
@@ -159,8 +158,8 @@ const EmployeeDashboard = () => {
  
       <div className="download-section">
         <p>Invigilators and rooms allocation list for exams</p>
-        <button onClick={handleDownload} className="download-btn" disabled={!allocationData}>
-          <FaDownload size={30} color={allocationData ? "green" : "gray"} />
+        <button onClick={handleDownload} className="download-btn">
+          <FaDownload size={30} color="green" />
         </button>
       </div>
     </div>

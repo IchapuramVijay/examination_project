@@ -5,8 +5,8 @@ import './Examsection';
 const ExamDashboard = () => {
   const [activeTab, setActiveTab] = useState('schedule'); // 'schedule' or 'allocation'
   const [branchData, setBranchData] = useState({});
-  const [roomAllocation, setRoomAllocation] = useState(null);
-  const [allocationTimestamp, setAllocationTimestamp] = useState(null);
+  const [hasAllocationData, setHasAllocationData] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // Set up the days and periods
   const days = [1, 2, 3, 4, 5, 6];
@@ -40,48 +40,17 @@ const ExamDashboard = () => {
       setBranchData(initialData);
     }
 
-    // Check for room allocation data from admin
+    // Check if room allocation data exists
     const allocData = localStorage.getItem('finalRoomAllocation');
     const timestamp = localStorage.getItem('roomAllocationTimestamp');
     
     if (allocData) {
-      try {
-        // Parse the CSV data
-        const lines = allocData.split('\n');
-        const headers = lines[0].split(',').map(header => header.trim());
-        
-        // Find indices for needed columns
-        const roomIndex = headers.findIndex(h => h.includes('Room'));
-        const blockIndex = headers.findIndex(h => h.includes('Block'));
-        const seniorProfIndex = headers.findIndex(h => h.includes('Senior Professor'));
-        const juniorProfIndex = headers.findIndex(h => h.includes('Junior Professor'));
-        
-        // Check if all needed columns exist
-        if (roomIndex >= 0 && blockIndex >= 0 && seniorProfIndex >= 0 && juniorProfIndex >= 0) {
-          // Process the data
-          const parsedData = [];
-          for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue; // Skip empty lines
-            
-            const values = lines[i].split(',').map(val => val.trim());
-            parsedData.push({
-              room: values[roomIndex],
-              block: values[blockIndex],
-              seniorProfessor: values[seniorProfIndex],
-              juniorProfessor: values[juniorProfIndex]
-            });
-          }
-          
-          setRoomAllocation(parsedData);
-          
-          // Format the timestamp
-          if (timestamp) {
-            const date = new Date(timestamp);
-            setAllocationTimestamp(date.toLocaleString());
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing room allocation data:', error);
+      setHasAllocationData(true);
+      
+      // Format the timestamp
+      if (timestamp) {
+        const date = new Date(timestamp);
+        setLastUpdated(date.toLocaleString());
       }
     }
   }, []);
@@ -103,20 +72,15 @@ const ExamDashboard = () => {
     alert('Schedule saved successfully!');
   };
   
-  const handleDownloadAllocation = () => {
+  const handleDownloadRoomAllocation = () => {
     // Download the room allocation data
-    if (roomAllocation) {
-      const headers = 'Room,Block,Senior Professor,Junior Professor\n';
-      const csvRows = roomAllocation.map(item => 
-        `${item.room},${item.block},${item.seniorProfessor},${item.juniorProfessor}`
-      );
-      
-      const csvContent = headers + csvRows.join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
+    const allocData = localStorage.getItem('finalRoomAllocation');
+    if (allocData) {
+      const blob = new Blob([allocData], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'final_room_allocation.csv';
+      link.download = 'room_allocation.csv';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -195,68 +159,52 @@ const ExamDashboard = () => {
         </div>
       )}
 
-      {/* Room Allocation Tab Content */}
+      {/* Simple Room Allocation Tab Content */}
       {activeTab === 'allocation' && (
-        <div className="allocation-content">
-          {roomAllocation ? (
-            <>
-              <div className="allocation-header">
-                <h2>Final Room Allocation</h2>
-                {allocationTimestamp && (
-                  <p className="last-updated">Last updated: {allocationTimestamp}</p>
-                )}
+        <div className="allocation-content" style={{ textAlign: 'center' }}>
+          <div className="allocation-box" style={{ 
+            background: 'white', 
+            padding: '20px', 
+            borderRadius: '8px', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            maxWidth: '600px',
+            margin: '30px auto'
+          }}>
+            <h2>Final Room Allocation from Admin</h2>
+            {lastUpdated && (
+              <p className="last-updated" style={{ fontSize: '0.9rem', color: '#777', fontStyle: 'italic' }}>
+                Last updated: {lastUpdated}
+              </p>
+            )}
+            
+            {hasAllocationData ? (
+              <div>
+                <p>Room allocation data is available for download.</p>
                 <button 
                   className="download-allocation-btn" 
-                  onClick={handleDownloadAllocation}
+                  onClick={handleDownloadRoomAllocation}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    margin: '20px auto',
+                    padding: '12px 20px',
+                    background: 'linear-gradient(to right, #2541b2, #4a6bff)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
                 >
                   <FaDownload /> Download Allocation File
                 </button>
               </div>
-              
-              <div className="allocation-stats">
-                <div className="stat-item">
-                  <span className="stat-value">{roomAllocation.length}</span>
-                  <span className="stat-label">Total Rooms</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{roomAllocation.filter(r => r.seniorProfessor).length}</span>
-                  <span className="stat-label">Senior Professors</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{roomAllocation.filter(r => r.juniorProfessor).length}</span>
-                  <span className="stat-label">Junior Professors</span>
-                </div>
-              </div>
-              
-              <div className="allocation-table-container">
-                <table className="allocation-table">
-                  <thead>
-                    <tr>
-                      <th>Room</th>
-                      <th>Block</th>
-                      <th>Senior Professor</th>
-                      <th>Junior Professor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {roomAllocation.map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.room}</td>
-                        <td>{item.block}</td>
-                        <td>{item.seniorProfessor}</td>
-                        <td>{item.juniorProfessor}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          ) : (
-            <div className="no-allocation-message">
-              <p>No room allocation data available.</p>
-              <p>Please check if admin has uploaded the final room allocation file.</p>
-            </div>
-          )}
+            ) : (
+              <p>No room allocation data available. Please check if admin has uploaded the allocation file.</p>
+            )}
+          </div>
         </div>
       )}
     </div>
