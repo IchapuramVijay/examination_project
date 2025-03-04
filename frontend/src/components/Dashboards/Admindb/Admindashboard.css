@@ -228,7 +228,12 @@
   background: #198754;
 }
 
-.allocation-description {
+/* Requirement Card Specific Styles */
+.requirement-card h3::after {
+  background: #fd7e14;
+}
+
+.allocation-description, .requirement-description {
   color: #6c757d;
   margin-bottom: 20px;
   font-size: 0.95rem;
@@ -314,7 +319,7 @@
   align-items: center;
 }
 
-/* Admin Actions Section - For the remaining cards */
+/* Admin Actions Section - For the requirement card */
 .admin-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -322,7 +327,7 @@
   margin-top: 20px;
 }
 
-.upload-icon, .download-icon {
+.upload-icon, .download-icon, .requirement-icon {
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -336,8 +341,41 @@
   color: #198754;
 }
 
+.requirement-icon {
+  color: white;
+  font-size: 1.2rem;
+}
+
 .upload-icon:hover, .download-icon:hover {
   transform: scale(1.2);
+}
+
+/* Requirement Download Button */
+.requirement-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.requirement-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(to right, #fd7e14, #e8590c);
+  color: white;
+  border: none;
+  padding: 14px 25px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(253, 126, 20, 0.25);
+}
+
+.requirement-download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(253, 126, 20, 0.3);
 }
 
 /* Dropdown Container for Branches */
@@ -502,4 +540,109 @@
   .exam-info h3 {
     font-size: 1.1rem;
   }
+  
+  .requirement-download-btn {
+    padding: 12px 18px;
+    font-size: 14px;
+  }
+}
+/* Popup styles - Add these to your existing Admindashboard.css file */
+
+/* Popup styles */
+.block-details-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.popup-content-wrapper {
+  background-color: white;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(to right, #4a6bff, #2541b2);
+  color: white;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  z-index: 10;
+}
+
+.popup-content {
+  padding: 20px;
+}
+
+.popup-content p {
+  margin: 10px 0;
+  font-size: 15px;
+}
+
+.room-numbers-section {
+  margin-top: 15px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 15px;
+}
+
+.room-numbers-section h4 {
+  font-size: 16px;
+  color: #212529;
+  margin-bottom: 10px;
+}
+
+.room-numbers-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.room-number {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 5px;
+  font-size: 14px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.room-number:hover {
+  background-color: #e9ecef;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }

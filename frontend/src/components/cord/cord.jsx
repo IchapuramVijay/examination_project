@@ -106,22 +106,81 @@ const Cord = () => {
     alert('Employee details have been submitted successfully');
   };
 
+  // Updated function to preserve the exact format of exam schedule data
   const handleExamScheduleDownload = () => {
-    const examSchedule = localStorage.getItem('examSchedule');
-    if (!examSchedule) {
-      alert('No exam schedule available at this time');
-      return;
+    try {
+      // Get the exam schedule from localStorage
+      const examScheduleData = localStorage.getItem('examSchedule');
+      if (!examScheduleData) {
+        alert('No exam schedule available at this time');
+        return;
+      }
+      
+      let csvContent = "";
+      
+      try {
+        // First try to parse the data as JSON
+        const parsedData = JSON.parse(examScheduleData);
+        
+        // If the data contains csvContent field, use it directly
+        if (parsedData.csvContent) {
+          csvContent = parsedData.csvContent;
+        } else if (parsedData.originalContent) {
+          // If there's an originalContent field, use that
+          csvContent = parsedData.originalContent;
+        } else {
+          // If it's a structured JSON object, convert it to CSV without reformatting
+          csvContent = 'Branch,';
+          
+          // Get column headers (day periods)
+          const firstBranch = Object.keys(parsedData)[0];
+          if (firstBranch && parsedData[firstBranch]) {
+            const dayPeriods = Object.keys(parsedData[firstBranch]);
+            // Sort to ensure consistent order
+            dayPeriods.sort();
+            
+            // Add original column headers without reformatting
+            dayPeriods.forEach(dp => {
+              csvContent += dp + ',';
+            });
+            
+            csvContent = csvContent.slice(0, -1) + '\n';
+            
+            // Add data rows
+            Object.keys(parsedData).forEach(branch => {
+              csvContent += branch + ',';
+              dayPeriods.forEach(dp => {
+                csvContent += (parsedData[branch][dp] || '0') + ',';
+              });
+              csvContent = csvContent.slice(0, -1) + '\n';
+            });
+          }
+        }
+      } catch (parseError) {
+        // If parsing as JSON fails, it might already be a CSV string
+        // Use it directly without any modifications
+        csvContent = examScheduleData;
+      }
+      
+      if (!csvContent) {
+        alert('Could not process the exam schedule data');
+        return;
+      }
+      
+      // Download the CSV
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'exam_schedule.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading exam schedule:', error);
+      alert('Error processing exam schedule data');
     }
-
-    const blob = new Blob([examSchedule], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'exam_schedule.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   if (!userData) return null;
@@ -229,7 +288,7 @@ const Cord = () => {
         </div>
 
         <div className="exam-schedule-card">
-          <h2>Examination Schedule</h2>
+          <h2>Required Employees Schedule </h2>
           <div className="schedule-content">
             <p className="description">
               Access and download the current examination schedule.
