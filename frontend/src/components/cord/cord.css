@@ -175,3 +175,122 @@
     gap: 0.8rem;
   }
 }
+/* Add these styles to your existing cord.css file */
+
+/* Action buttons container */
+.action-buttons-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+/* Styling for the allocation button */
+.allocation-button {
+  background-color: #4a6bff;
+}
+
+.allocation-button:hover {
+  background-color: #3a56d6;
+}
+
+/* Room allocation container */
+.room-allocation-container {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+/* Header for allocation section */
+.allocation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.allocation-header h3 {
+  margin: 0;
+  color: #212529;
+  font-size: 1.2rem;
+}
+
+/* Download button for allocation */
+.download-button {
+  background-color: #198754;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.download-button:hover {
+  background-color: #157347;
+}
+
+/* Allocation table styling */
+.allocation-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.allocation-table th,
+.allocation-table td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #dee2e6;
+}
+
+.allocation-table th {
+  background-color: #f1f1f1;
+  font-weight: 600;
+  color: #333;
+}
+
+.allocation-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.allocation-table tr:hover {
+  background-color: #f0f7ff;
+}
+
+/* Close button for allocation view */
+.close-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+}
+
+.close-button:hover {
+  background-color: #5a6268;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .action-buttons-container {
+    flex-direction: column;
+  }
+  
+  .allocation-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .table-wrapper {
+    overflow-x: auto;
+  }
+}

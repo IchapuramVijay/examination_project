@@ -11,6 +11,8 @@ const Cord = () => {
     designation: ''
   });
   const [employeeList, setEmployeeList] = useState([]);
+  const [showRoomAllocation, setShowRoomAllocation] = useState(false);
+  const [roomAllocationData, setRoomAllocationData] = useState(null);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -183,6 +185,70 @@ const Cord = () => {
     }
   };
 
+  // Function to handle showing the final room allocation
+  const handleViewRoomAllocation = () => {
+    try {
+      // Get the room allocation data from localStorage (stored by admin)
+      const roomAllocation = localStorage.getItem('finalRoomAllocation');
+      if (!roomAllocation) {
+        alert('No room allocation data available yet. Please check back later.');
+        return;
+      }
+      
+      // Parse the CSV content
+      const rows = roomAllocation.split('\n');
+      const headers = rows[0].split(',');
+      
+      // Parse data rows
+      const data = [];
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i].trim() === '') continue;
+        
+        const values = rows[i].split(',');
+        const rowData = {};
+        
+        headers.forEach((header, index) => {
+          rowData[header.trim()] = values[index] ? values[index].trim() : '';
+        });
+        
+        data.push(rowData);
+      }
+      
+      // Set the data to state to display it
+      setRoomAllocationData({ headers, data });
+      // Show the allocation section
+      setShowRoomAllocation(true);
+    } catch (error) {
+      console.error('Error processing room allocation data:', error);
+      alert('Error loading room allocation data. Please try again later.');
+    }
+  };
+
+  // Function to download the room allocation data
+  const handleDownloadRoomAllocation = () => {
+    try {
+      const roomAllocation = localStorage.getItem('finalRoomAllocation');
+      if (!roomAllocation) {
+        alert('No room allocation data available');
+        return;
+      }
+      
+      // Download the CSV
+      const blob = new Blob([roomAllocation], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'room_allocation.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading room allocation:', error);
+      alert('Error processing room allocation data');
+    }
+  };
+
   if (!userData) return null;
 
   return (
@@ -288,17 +354,69 @@ const Cord = () => {
         </div>
 
         <div className="exam-schedule-card">
-          <h2>Required Employees Schedule </h2>
+          <h2>Required Employees Schedule</h2>
           <div className="schedule-content">
             <p className="description">
               Access and download the current examination schedule.
             </p>
-            <button 
-              className="action-button"
-              onClick={handleExamScheduleDownload}
-            >
-              Download Schedule
-            </button>
+            <div className="action-buttons-container">
+              <button 
+                className="action-button"
+                onClick={handleExamScheduleDownload}
+              >
+                Download Schedule
+              </button>
+              
+              <button 
+                className="action-button allocation-button"
+                onClick={handleViewRoomAllocation}
+              >
+                Final Room Allocation
+              </button>
+            </div>
+            
+            {showRoomAllocation && roomAllocationData && (
+              <div className="room-allocation-container">
+                <div className="allocation-header">
+                  <h3>Room Allocation Details</h3>
+                  <button 
+                    className="download-button"
+                    onClick={handleDownloadRoomAllocation}
+                    title="Download Room Allocation"
+                  >
+                    Download
+                  </button>
+                </div>
+                
+                <div className="table-wrapper">
+                  <table className="allocation-table">
+                    <thead>
+                      <tr>
+                        {roomAllocationData.headers.map((header, index) => (
+                          <th key={index}>{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {roomAllocationData.data.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          {roomAllocationData.headers.map((header, colIndex) => (
+                            <td key={colIndex}>{row[header]}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <button 
+                  className="close-button"
+                  onClick={() => setShowRoomAllocation(false)}
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
