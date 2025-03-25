@@ -2,7 +2,7 @@
 
 .admin-dashboard {
   padding: 25px;
-  max-width: 1200px;
+  max-width: 1300px; /* Reduced from 1400px to 1300px */
   margin: 0 auto;
   background-color: #f8f9fa;
   border-radius: 10px;
@@ -175,10 +175,10 @@
   font-size: 16px;
 }
 
-/* Main Actions Row - New layout for side-by-side cards */
+/* Main Actions Row - More balanced 2.5:1 ratio */
 .main-actions-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2.5fr 1fr; /* Changed from 4fr 1fr to 2.5fr 1fr */
   gap: 25px;
   margin-bottom: 30px;
 }
@@ -223,39 +223,45 @@
   background: #0d6efd;
 }
 
+.employees-card {
+  width: 100%;
+}
+
 /* Allocation Card Specific Styles */
 .allocation-card h3::after {
   background: #198754;
 }
 
-/* Requirement Card Specific Styles */
-.requirement-card h3::after {
-  background: #fd7e14;
+.allocation-card {
+  padding: 20px; /* Increased from 18px to 20px */
+  width: 100%;
+  max-width: 300px; /* Increased from 250px to 300px */
+  margin-left: auto;
 }
 
-.allocation-description, .requirement-description {
+.allocation-description {
   color: #6c757d;
-  margin-bottom: 20px;
-  font-size: 0.95rem;
+  margin-bottom: 15px; /* Increased from 12px to 15px */
+  font-size: 0.9rem; /* Increased from 0.85rem to 0.9rem */
   line-height: 1.5;
 }
 
 .upload-container {
   display: flex;
   justify-content: center;
-  margin: 15px 0;
+  margin: 10px 0; /* Increased from 8px to 10px */
 }
 
 .upload-allocation-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px; /* Increased from 8px to 10px */
   background: linear-gradient(to right, #198754, #157347);
   color: white;
   border: none;
-  padding: 14px 25px;
+  padding: 12px 20px; /* Increased from 10px 16px to 12px 20px */
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 15px; /* Increased from 14px to 15px */
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -268,21 +274,21 @@
 }
 
 .upload-allocation-btn .upload-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem; /* Increased from 1rem to 1.1rem */
 }
 
 .file-info {
   background: #f8f9fa;
-  padding: 12px 15px;
+  padding: 10px 12px; /* Increased from 8px 10px to 10px 12px */
   border-radius: 6px;
-  margin: 15px 0;
-  font-size: 0.95rem;
+  margin: 12px 0; /* Increased from 10px to 12px */
+  font-size: 0.9rem; /* Increased from 0.85rem to 0.9rem */
   border-left: 4px solid #6c757d;
 }
 
 .upload-status {
-  padding: 12px 15px;
-  margin: 15px 0;
+  padding: 10px 12px; /* Increased from 8px 10px to 10px 12px */
+  margin: 12px 0; /* Increased from 10px to 12px */
   border-radius: 6px;
   text-align: center;
   font-weight: 500;
@@ -301,12 +307,12 @@
 }
 
 .allocation-note {
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* Increased from 0.8rem to 0.85rem */
   color: #6c757d;
   background: #f8f9fa;
-  padding: 12px 18px;
+  padding: 10px 15px; /* Increased from 8px 12px to 10px 15px */
   border-left: 4px solid #ffc107;
-  margin-top: 20px;
+  margin-top: 15px; /* Increased from 12px to 15px */
   border-radius: 4px;
 }
 
@@ -319,15 +325,8 @@
   align-items: center;
 }
 
-/* Admin Actions Section - For the requirement card */
-.admin-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 25px;
-  margin-top: 20px;
-}
-
-.upload-icon, .download-icon, .requirement-icon {
+/* Icon styles */
+.upload-icon, .download-icon, .filter-icon {
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -341,41 +340,8 @@
   color: #198754;
 }
 
-.requirement-icon {
-  color: white;
-  font-size: 1.2rem;
-}
-
 .upload-icon:hover, .download-icon:hover {
   transform: scale(1.2);
-}
-
-/* Requirement Download Button */
-.requirement-buttons {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.requirement-download-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: linear-gradient(to right, #fd7e14, #e8590c);
-  color: white;
-  border: none;
-  padding: 14px 25px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 8px rgba(253, 126, 20, 0.25);
-}
-
-.requirement-download-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(253, 126, 20, 0.3);
 }
 
 /* Dropdown Container for Branches */
@@ -411,6 +377,8 @@
   overflow: hidden;
   min-width: 180px;
   z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .dropdown-item {
@@ -423,12 +391,11 @@
   background-color: #f5f9ff;
 }
 
-.download-button {
+/* Filter and download buttons */
+.filter-button, .download-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #198754;
-  color: white;
   border: none;
   width: 40px;
   height: 40px;
@@ -437,15 +404,99 @@
   transition: all 0.2s;
 }
 
+.filter-button {
+  background: #6c757d;
+  color: white;
+}
+
+.filter-button:hover {
+  background: #5a6268;
+  transform: scale(1.1);
+}
+
+.download-button {
+  background: #198754;
+  color: white;
+}
+
 .download-button:hover {
   background: #0f5132;
   transform: scale(1.1);
+}
+
+/* Filter options section */
+.filter-options {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #dee2e6;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.filter-option label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.filter-option input[type="date"] {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  flex: 1;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.apply-filter-btn, .clear-filter-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.apply-filter-btn {
+  background: #0d6efd;
+  color: white;
+}
+
+.apply-filter-btn:hover {
+  background: #0b5ed7;
+}
+
+.clear-filter-btn {
+  background: #f8f9fa;
+  border: 1px solid #ced4da;
+  color: #6c757d;
+}
+
+.clear-filter-btn:hover {
+  background: #e9ecef;
 }
 
 /* Employee Table */
 .employee-table-container {
   margin-top: 20px;
   flex-grow: 1;
+  width: 100%;
 }
 
 .employee-table-container h4 {
@@ -454,16 +505,33 @@
   color: #212529;
 }
 
+.table-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.results-count {
+  font-size: 0.9rem;
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
 .table-wrapper {
-  max-height: 250px;
+  max-height: 400px; /* Reduced from 450px to 400px */
   overflow-y: auto;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
 }
 
 .employee-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .employee-table th,
@@ -480,6 +548,12 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.employee-table th:hover {
+  background-color: #e9ecef;
 }
 
 .employee-table tr:hover {
@@ -495,58 +569,6 @@
   margin-top: 20px;
   flex-grow: 1;
 }
-
-/* Responsive adjustments */
-@media (max-width: 992px) {
-  .main-actions-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .admin-actions {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .admin-details {
-    flex-direction: column;
-    gap: 10px;
-    align-items: flex-start;
-  }
-  
-  .admin-details span {
-    width: 100%;
-  }
-  
-  .dept {
-    margin-left: 0;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-}
-
-@media (max-width: 576px) {
-  .admin-dashboard {
-    padding: 15px;
-  }
-  
-  .exam-info h2 {
-    font-size: 1.5rem;
-  }
-  
-  .exam-info h3 {
-    font-size: 1.1rem;
-  }
-  
-  .requirement-download-btn {
-    padding: 12px 18px;
-    font-size: 14px;
-  }
-}
-/* Popup styles - Add these to your existing Admindashboard.css file */
 
 /* Popup styles */
 .block-details-popup {
@@ -645,4 +667,74 @@
   background-color: #e9ecef;
   transform: translateY(-2px);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .main-actions-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .allocation-card {
+    max-width: none;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-details {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .admin-details span {
+    width: 100%;
+  }
+  
+  .dept {
+    margin-left: 0;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .filter-option {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .filter-option input[type="date"] {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-dashboard {
+    padding: 15px;
+  }
+  
+  .exam-info h2 {
+    font-size: 1.5rem;
+  }
+  
+  .exam-info h3 {
+    font-size: 1.1rem;
+  }
+  
+  .rooms-dropdown-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filter-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .apply-filter-btn, .clear-filter-btn {
+    width: 100%;
+  }
 }

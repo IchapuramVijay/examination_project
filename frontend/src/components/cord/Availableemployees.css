@@ -51,6 +51,73 @@
     border-bottom: 1px solid #e9ecef;
 }
 
+/* Date selection row */
+.date-selection-row {
+    margin-bottom: 1.5rem;
+}
+
+.date-picker {
+    display: flex;
+    flex-direction: column;
+    max-width: 300px;
+}
+
+.date-input {
+    padding: 10px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.date-input:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* Search bar */
+.search-bar {
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* Employee dropdown */
+.employee-selection {
+    margin-bottom: 1.5rem;
+}
+
+.employee-dropdown {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background-color: white;
+    height: 45px;
+}
+
+.employee-dropdown:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
 .input-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -68,6 +135,9 @@
     font-weight: 600;
     color: #495057;
     margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .input-field {
@@ -97,6 +167,7 @@
     align-items: center;
     gap: 8px;
     transition: background-color 0.3s ease;
+    margin-top: 1rem;
 }
 
 .add-button:hover {
@@ -106,6 +177,14 @@
 .table-section {
     padding: 2rem;
     overflow-x: auto;
+}
+
+.table-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 1rem;
 }
 
 .employees-table {
@@ -131,6 +210,28 @@
 
 .employees-table tr:hover {
     background-color: #f8f9fa;
+}
+
+.empty-table-message {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.remove-button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.remove-button:hover {
+    background: #c82333;
 }
 
 .save-section {

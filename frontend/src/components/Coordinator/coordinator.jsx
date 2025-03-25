@@ -59,10 +59,18 @@ const Coordinator = () => {
             >
               <option value="">Select Branch</option>
               <option value="CSE">CSE</option>
+              <option value="CSBS">CSBS</option>
+              <option value="CSE(DS)">CSE(DS)</option>
+              <option value="CSE(AI&ML)">CSE(AI&ML)</option>
+              <option value="CSE(IOT)">CSE(IOT)</option>
+              <option value="IT">IT</option>
               <option value="ECE">ECE</option>
               <option value="EEE">EEE</option>
               <option value="CIVIL">CIVIL</option>
               <option value="MECH">MECH</option>
+              <option value="Chemical">Chemical</option>
+              <option value="MBA">MBA</option>
+              <option value="MCA">MCA</option>
             </select>
           </div>
           <button type="submit" className="submit-btn">Submit</button>

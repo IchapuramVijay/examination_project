@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUpload, FaDownload, FaChevronDown, FaFileUpload, FaUserFriends } from 'react-icons/fa';
+import { FaUpload, FaDownload, FaChevronDown, FaFileUpload, FaFilter, FaSort, FaCalendarAlt } from 'react-icons/fa';
 import './Admindashboard.css';
 
 const AdminDashboard = () => {
@@ -9,6 +9,9 @@ const AdminDashboard = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [branchEmployees, setBranchEmployees] = useState([]);
+  const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [filterDate, setFilterDate] = useState('');
   const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
   
@@ -20,6 +23,9 @@ const AdminDashboard = () => {
   // State for file upload
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
+  
+  // State for showing filter options
+  const [showFilterOptions, setShowFilterOptions] = useState(false);
 
   // Building blocks with static room data
   const blocks = [
@@ -30,7 +36,11 @@ const AdminDashboard = () => {
     { name: 'SJ Block', rooms: 14 }
   ];
 
-  const branches = ['CSE', 'ECE', 'EEE', 'CIVIL', 'MECH'];
+  // Updated branches list to include all departments
+  const branches = [
+    'CSE', 'CSBS', 'CSE(DS)', 'CSE(AI&ML)', 'CSE(IOT)', 'IT', 
+    'ECE', 'EEE', 'CIVIL', 'MECH', 'Chemical', 'MCA', 'MBA'
+  ];
 
   useEffect(() => {
     if (!admin) {
@@ -51,16 +61,30 @@ const AdminDashboard = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [navigate]);
 
+  useEffect(() => {
+    // When selected branch changes, reset filter date and apply filtering
+    if (branchEmployees.length > 0) {
+      applyFilters();
+    }
+  }, [branchEmployees]);
+
   const handleBranchSelect = (branch) => {
     setSelectedBranch(branch);
     setIsDropdownOpen(false);
+    setFilterDate('');
 
     // Get employee data for selected branch from localStorage
-    const employeeData = localStorage.getItem(`availableEmployees_${branch}`);
+    const employeeData = localStorage.getItem(`employees_${branch}`);
     if (employeeData) {
-      setBranchEmployees(JSON.parse(employeeData));
+      const parsedData = JSON.parse(employeeData);
+      setBranchEmployees(parsedData);
+      setFilteredEmployees(parsedData);
+      
+      // Reset sort config when branch changes
+      setSortConfig({ key: null, direction: 'ascending' });
     } else {
       setBranchEmployees([]);
+      setFilteredEmployees([]);
     }
   };
 
@@ -85,6 +109,64 @@ const AdminDashboard = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  // Sorting function
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    
+    setSortConfig({ key, direction });
+    
+    const sortedData = [...filteredEmployees].sort((a, b) => {
+      if (a[key] < b[key]) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (a[key] > b[key]) {
+        return direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+    
+    setFilteredEmployees(sortedData);
+  };
+
+  // Function to get sort indicator
+  const getSortIndicator = (key) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
+  };
+
+  // Function to apply date filtering
+  const applyFilters = () => {
+    let filtered = [...branchEmployees];
+    
+    if (filterDate) {
+      filtered = filtered.filter(emp => emp.date === filterDate);
+    }
+    
+    setFilteredEmployees(filtered);
+  };
+
+  // Handler for date filter change
+  const handleDateFilterChange = (e) => {
+    setFilterDate(e.target.value);
+  };
+
+  // Handler to apply filters when button is clicked
+  const handleApplyFilters = () => {
+    applyFilters();
+    setShowFilterOptions(false);
+  };
+
+  // Handler to clear filters
+  const handleClearFilters = () => {
+    setFilterDate('');
+    setFilteredEmployees(branchEmployees);
+    setShowFilterOptions(false);
   };
 
   // Handlers for rooms dropdown
@@ -194,80 +276,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Function to handle download of required employees from Exam Section
-  const handleDownloadExamSchedule = () => {
-    try {
-      // Get the exam schedule from localStorage
-      const examScheduleData = localStorage.getItem('examSchedule');
-      if (!examScheduleData) {
-        alert('No examination schedule data available. Please wait for the Exam Section to submit a schedule.');
-        return;
-      }
-      
-      let csvContent = "";
-      
-      // First try to parse the data
-      const parsedData = JSON.parse(examScheduleData);
-      
-      // Check which format the data is in (from ExamScheduleTable or ExamDashboard)
-      if (parsedData.csvContent) {
-        // Data is in the format from ExamScheduleTable
-        csvContent = parsedData.csvContent;
-      } else {
-        // Data is in the format from ExamDashboard
-        // Generate CSV header
-        csvContent = 'Branch,';
-        
-        // Get days and periods
-        // We need to find the pattern like Day1AM, Day1PM, etc.
-        const firstBranch = Object.keys(parsedData)[0];
-        if (firstBranch && parsedData[firstBranch]) {
-          const dayPeriods = Object.keys(parsedData[firstBranch]);
-          
-          // Sort the day periods to ensure they're in order
-          dayPeriods.sort();
-          
-          // Create the header row
-          dayPeriods.forEach(dp => {
-            // Format: change Day1AM to Day 1 AM
-            const formattedDP = dp.replace(/Day(\d+)([A-Z]+)/, 'Day $1 $2');
-            csvContent += formattedDP + ',';
-          });
-          
-          csvContent = csvContent.slice(0, -1) + '\n';
-          
-          // Add data for each branch
-          Object.keys(parsedData).forEach(branch => {
-            csvContent += branch + ',';
-            dayPeriods.forEach(dp => {
-              csvContent += (parsedData[branch][dp] || '0') + ',';
-            });
-            csvContent = csvContent.slice(0, -1) + '\n';
-          });
-        }
-      }
-      
-      if (!csvContent) {
-        alert('Could not generate CSV from the schedule data.');
-        return;
-      }
-      
-      // Download the CSV
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'required_invigilators.csv';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading exam schedule:', error);
-      alert('Error processing examination schedule data');
-    }
-  };
-
   return (
     <div className="admin-dashboard">
       <div className="admin-details">
@@ -343,37 +351,89 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+            
             {selectedBranch && (
-              <button 
-                className="download-button"
-                onClick={handleDownloadEmployeeList}
-                title="Download Employee List"
-              >
-                <FaDownload />
-              </button>
+              <>
+                <button 
+                  className="filter-button"
+                  onClick={() => setShowFilterOptions(!showFilterOptions)}
+                  title="Filter Options"
+                >
+                  <FaFilter />
+                </button>
+                
+                <button 
+                  className="download-button"
+                  onClick={handleDownloadEmployeeList}
+                  title="Download Employee List"
+                >
+                  <FaDownload />
+                </button>
+              </>
             )}
           </div>
 
-          {selectedBranch && branchEmployees.length > 0 && (
+          {showFilterOptions && (
+            <div className="filter-options">
+              <div className="filter-option">
+                <label><FaCalendarAlt /> Filter by Date:</label>
+                <input 
+                  type="date" 
+                  value={filterDate} 
+                  onChange={handleDateFilterChange}
+                />
+              </div>
+              
+              <div className="filter-actions">
+                <button onClick={handleApplyFilters} className="apply-filter-btn">
+                  Apply Filters
+                </button>
+                <button onClick={handleClearFilters} className="clear-filter-btn">
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          )}
+
+          {selectedBranch && filteredEmployees.length > 0 && (
             <div className="employee-table-container">
-              <h4>Employee List - {selectedBranch}</h4>
+              <h4>Employee List - {selectedBranch} {filterDate && `(Date: ${filterDate})`}</h4>
+              <div className="table-actions">
+                <span className="results-count">{filteredEmployees.length} employees found</span>
+              </div>
               <div className="table-wrapper">
                 <table className="employee-table">
                   <thead>
                     <tr>
-                      <th>Employee ID</th>
-                      <th>Name</th>
-                      <th>Department</th>
-                      <th>Designation</th>
+                      <th onClick={() => requestSort('id')}>
+                        Employee ID {getSortIndicator('id')}
+                      </th>
+                      <th onClick={() => requestSort('name')}>
+                        Name {getSortIndicator('name')}
+                      </th>
+                      <th onClick={() => requestSort('department')}>
+                        Department {getSortIndicator('department')}
+                      </th>
+                      <th onClick={() => requestSort('designation')}>
+                        Designation {getSortIndicator('designation')}
+                      </th>
+                      {branchEmployees.some(emp => emp.date) && (
+                        <th onClick={() => requestSort('date')}>
+                          Date {getSortIndicator('date')}
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
-                    {branchEmployees.map((employee, index) => (
+                    {filteredEmployees.map((employee, index) => (
                       <tr key={index}>
-                        <td>{employee.employeeId}</td>
+                        <td>{employee.id || employee.employeeId}</td>
                         <td>{employee.name}</td>
                         <td>{employee.department}</td>
                         <td>{employee.designation}</td>
+                        {branchEmployees.some(emp => emp.date) && (
+                          <td>{employee.date || 'N/A'}</td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -382,9 +442,12 @@ const AdminDashboard = () => {
             </div>
           )}
           
-          {selectedBranch && branchEmployees.length === 0 && (
+          {selectedBranch && filteredEmployees.length === 0 && (
             <div className="no-data-message">
-              No employee data available for {selectedBranch}
+              {filterDate ? 
+                `No employee data available for ${selectedBranch} on ${filterDate}` : 
+                `No employee data available for ${selectedBranch}`
+              }
             </div>
           )}
         </div>
@@ -409,6 +472,7 @@ const AdminDashboard = () => {
               ref={fileInputRef}
               onChange={handleFileChange}
               style={{ display: 'none' }}
+              accept=".csv"
             />
           </div>
           
@@ -426,25 +490,6 @@ const AdminDashboard = () => {
           
           <div className="allocation-note">
             <p>Note: Each room requires one senior professor and one junior professor from the available employees list.</p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Required Employees Section */}
-      <div className="admin-actions">
-        <div className="action-card requirement-card">
-          <h3>Required Employees</h3>
-          <p className="requirement-description">
-            Download the required employees data submitted by the Exam Section
-          </p>
-          <div className="action-buttons requirement-buttons">
-            <button 
-              className="requirement-download-btn"
-              onClick={handleDownloadExamSchedule}
-            >
-              <FaUserFriends className="requirement-icon" />
-              <span>Download Requirements</span>
-            </button>
           </div>
         </div>
       </div>

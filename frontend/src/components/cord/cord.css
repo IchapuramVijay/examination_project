@@ -29,178 +29,122 @@
   padding: 0.5rem 1rem;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
 }
 
 .content-section {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.5rem;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.staff-management-card, 
-.exam-schedule-card {
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-card {
   background: white;
   border-radius: 8px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  height: fit-content;
-}
-
-.staff-management-card h2,
-.exam-schedule-card h2 {
-  color: #2c3e50;
-  margin-bottom: 1rem;
-  font-size: 1.3rem;
-  text-align: center;
-}
-
-.employee-form-container {
-  background: #f8f9fa;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-}
-
-.employee-form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.8rem;
-}
-
-.form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.form-group label {
-  color: #2c3e50;
-  font-weight: 500;
-  font-size: 0.9rem;
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.form-group input {
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.form-buttons {
+.card-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 50%;
   display: flex;
+  align-items: center;
   justify-content: center;
-  margin-top: 1rem;
+}
+
+.employee-icon {
+  color: #4a6bff;
+  background-color: rgba(74, 107, 255, 0.1);
+}
+
+.schedule-icon {
+  color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.allocation-icon {
+  color: #fd7e14;
+  background-color: rgba(253, 126, 20, 0.1);
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-content h3 {
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  font-size: 1.2rem;
+}
+
+.card-content p {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+  flex: 1;
 }
 
 .action-button {
   background: #7950f2;
   color: white;
   border: none;
-  padding: 0.5rem 1.5rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 4px;
   font-size: 0.9rem;
   cursor: pointer;
-}
-
-.employee-table-container {
-  margin-top: 1rem;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.employee-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.employee-table th,
-.employee-table td {
-  padding: 0.5rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
-}
-
-.employee-table th {
-  background: #f8f9fa;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  font-weight: 500;
-}
-
-.remove-button {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 0.3rem 0.8rem;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.schedule-content {
+  transition: background-color 0.3s;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  text-align: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: auto;
 }
 
-.description {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+.action-button:hover {
+  background-color: #6741d9;
 }
 
-/* Responsive design */
-@media (max-width: 1024px) {
-  .content-section {
-    grid-template-columns: 1fr;
-  }
-  
-  .employee-form-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .main-header {
-    flex-direction: column;
-    text-align: center;
-    gap: 0.8rem;
-  }
-}
-/* Add these styles to your existing cord.css file */
-
-/* Action buttons container */
-.action-buttons-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-top: 15px;
-}
-
-/* Styling for the allocation button */
-.allocation-button {
+.primary-action {
   background-color: #4a6bff;
 }
 
-.allocation-button:hover {
+.primary-action:hover {
   background-color: #3a56d6;
 }
 
 /* Room allocation container */
 .room-allocation-container {
-  margin-top: 25px;
-  padding: 20px;
-  background-color: #f8f9fa;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: white;
   border-radius: 8px;
   border: 1px solid #dee2e6;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Header for allocation section */
@@ -208,41 +152,48 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
 }
 
 .allocation-header h3 {
   margin: 0;
-  color: #212529;
+  color: #2c3e50;
   font-size: 1.2rem;
 }
 
 /* Download button for allocation */
 .download-button {
-  background-color: #198754;
+  background-color: #28a745;
   color: white;
   border: none;
   border-radius: 4px;
-  padding: 8px 15px;
+  padding: 0.5rem 1rem;
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .download-button:hover {
-  background-color: #157347;
+  background-color: #218838;
+}
+
+/* Table wrapper */
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
 }
 
 /* Allocation table styling */
 .allocation-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 15px;
 }
 
 .allocation-table th,
 .allocation-table td {
-  padding: 10px;
+  padding: 0.75rem;
   text-align: left;
   border: 1px solid #dee2e6;
 }
@@ -267,30 +218,36 @@
   color: white;
   border: none;
   border-radius: 4px;
-  padding: 8px 15px;
+  padding: 0.5rem 1rem;
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.2s;
-  margin-top: 10px;
 }
 
 .close-button:hover {
   background-color: #5a6268;
 }
 
-/* Responsive adjustments */
+/* Responsive design */
 @media (max-width: 768px) {
-  .action-buttons-container {
+  .main-header {
     flex-direction: column;
+    text-align: center;
+    gap: 0.8rem;
+    padding: 1rem 0.5rem;
+  }
+  
+  .dashboard-cards {
+    grid-template-columns: 1fr;
   }
   
   .allocation-header {
     flex-direction: column;
-    gap: 10px;
+    gap: 0.8rem;
     align-items: flex-start;
   }
   
-  .table-wrapper {
-    overflow-x: auto;
+  .room-allocation-container {
+    padding: 1rem;
   }
 }

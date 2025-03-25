@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaUserCheck, FaCalendarAlt, FaDownload, FaEye } from 'react-icons/fa';
 import './cord.css';
 
 const Cord = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
-  const [employeeDetails, setEmployeeDetails] = useState({
-    employeeId: '',
-    name: '',
-    designation: ''
-  });
-  const [employeeList, setEmployeeList] = useState([]);
   const [showRoomAllocation, setShowRoomAllocation] = useState(false);
   const [roomAllocationData, setRoomAllocationData] = useState(null);
 
@@ -31,81 +26,16 @@ const Cord = () => {
 
     const data = JSON.parse(localStorage.getItem('coordinatorData'));
     setUserData(data);
-
-    // Load existing employee list
-    const savedEmployees = localStorage.getItem(`employees_${data.branch}`);
-    if (savedEmployees) {
-      setEmployeeList(JSON.parse(savedEmployees));
-    }
-  }, []);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEmployeeDetails(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('coordinatorData');
     navigate('/coordinator', { replace: true });
   };
 
-  const handleAddEmployee = () => {
-    if (!employeeDetails.employeeId || !employeeDetails.name || !employeeDetails.designation) {
-      alert('Please fill all the fields');
-      return;
-    }
-
-    if (employeeList.some(emp => emp.employeeId === employeeDetails.employeeId)) {
-      alert('Employee ID already exists');
-      return;
-    }
-
-    const newList = [...employeeList, {
-      ...employeeDetails,
-      department: userData.branch
-    }];
-
-    setEmployeeList(newList);
-    localStorage.setItem(`employees_${userData.branch}`, JSON.stringify(newList));
-
-    setEmployeeDetails({
-      employeeId: '',
-      name: '',
-      designation: ''
-    });
-  };
-
-  const handleRemoveEmployee = (index) => {
-    const newList = employeeList.filter((_, i) => i !== index);
-    setEmployeeList(newList);
-    localStorage.setItem(`employees_${userData.branch}`, JSON.stringify(newList));
-  };
-
-  const handleSubmitEmployees = () => {
-    if (employeeList.length === 0) {
-      alert('Please add at least one employee');
-      return;
-    }
-
-    const headers = ['Employee ID', 'Name', 'Department', 'Designation'];
-    const csvData = employeeList.map(emp => [
-      emp.employeeId,
-      emp.name,
-      emp.department,
-      emp.designation
-    ]);
-
-    const csvContent = [headers, ...csvData]
-      .map(row => row.join(','))
-      .join('\n');
-    
-    localStorage.setItem(`employeesCSV_${userData.branch}`, csvContent);
-    localStorage.setItem(`availableEmployees_${userData.branch}`, JSON.stringify(employeeList));
-    
-    alert('Employee details have been submitted successfully');
+  // Function to navigate to the available employees page
+  const handleManageEmployees = () => {
+    navigate('/available-employees');
   };
 
   // Updated function to preserve the exact format of exam schedule data
@@ -249,176 +179,129 @@ const Cord = () => {
     }
   };
 
+  // Branch label mapping for display
+  const getBranchLabel = (branchCode) => {
+    const branchLabels = {
+      'CSE': 'Computer Science Engineering',
+      'CSBS': 'Computer Science and Business Systems',
+      'CSE(DS)': 'Computer Science (Data Science)',
+      'CSE(AI&ML)': 'Computer Science (AI & Machine Learning)',
+      'CSE(IOT)': 'Computer Science (Internet of Things)',
+      'IT': 'Information Technology',
+      'ECE': 'Electronics and Communication Engineering',
+      'EEE': 'Electrical and Electronics Engineering',
+      'CIVIL': 'Civil Engineering',
+      'MECH': 'Mechanical Engineering',
+      'Chemical': 'Chemical Engineering',
+      'MCA': 'Master of Computer Applications',
+      'MBA': 'Master of Business Administration'
+    };
+    
+    return branchLabels[branchCode] || branchCode;
+  };
+
   if (!userData) return null;
 
   return (
     <div className="coordinator-panel">
       <div className="main-header">
-        <h1>Coordinator Panel - {userData.branch}</h1>
+        <h1>Coordinator Panel - {getBranchLabel(userData.branch)}</h1>
         <button onClick={handleLogout} className="logout-button">Logout</button>
       </div>
 
       <div className="content-section">
-        <div className="staff-management-card">
-          <h2>Staff Availability Management</h2>
-          <div className="employee-form-container">
-            <div className="employee-form-grid">
-              <div className="form-group">
-                <label htmlFor="employeeId">Employee ID</label>
-                <input
-                  id="employeeId"
-                  type="text"
-                  name="employeeId"
-                  value={employeeDetails.employeeId}
-                  onChange={handleInputChange}
-                  placeholder="Enter ID"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="name">Name</label>
-                <input
-                  id="name"
-                  type="text"
-                  name="name"
-                  value={employeeDetails.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter name"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="designation">Designation</label>
-                <input
-                  id="designation"
-                  type="text"
-                  name="designation"
-                  value={employeeDetails.designation}
-                  onChange={handleInputChange}
-                  placeholder="Enter designation"
-                />
-              </div>
+        <div className="dashboard-cards">
+          <div className="dashboard-card">
+            <div className="card-icon employee-icon">
+              <FaUserCheck />
             </div>
-            <div className="form-buttons">
+            <div className="card-content">
+              <h3>Manage Staff Availability</h3>
+              <p>Add and manage faculty members available for invigilation</p>
               <button 
-                className="action-button add-button"
-                onClick={handleAddEmployee}
+                className="action-button primary-action"
+                onClick={handleManageEmployees}
               >
-                Add Employee
+                Manage Employees
               </button>
             </div>
           </div>
 
-          {employeeList.length > 0 && (
-            <div className="employee-table-container">
-              <h3>Added Employees</h3>
-              <div className="table-wrapper">
-                <table className="employee-table">
-                  <thead>
-                    <tr>
-                      <th>Employee ID</th>
-                      <th>Name</th>
-                      <th>Department</th>
-                      <th>Designation</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employeeList.map((emp, index) => (
-                      <tr key={index}>
-                        <td>{emp.employeeId}</td>
-                        <td>{emp.name}</td>
-                        <td>{userData.branch}</td>
-                        <td>{emp.designation}</td>
-                        <td>
-                          <button 
-                            className="remove-button"
-                            onClick={() => handleRemoveEmployee(index)}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="submit-button-container">
-                <button 
-                  className="action-button submit-button"
-                  onClick={handleSubmitEmployees}
-                >
-                  Submit All Employees
-                </button>
-              </div>
+          <div className="dashboard-card">
+            <div className="card-icon schedule-icon">
+              <FaCalendarAlt />
             </div>
-          )}
-        </div>
-
-        <div className="exam-schedule-card">
-          <h2>Required Employees Schedule</h2>
-          <div className="schedule-content">
-            <p className="description">
-              Access and download the current examination schedule.
-            </p>
-            <div className="action-buttons-container">
+            <div className="card-content">
+              <h3>Required Employees Schedule</h3>
+              <p>Download the  number of required employees for the examination schedule</p>
               <button 
                 className="action-button"
                 onClick={handleExamScheduleDownload}
               >
-                Download Schedule
+                <FaDownload /> Download Required List
               </button>
-              
+            </div>
+          </div>
+
+          <div className="dashboard-card">
+            <div className="card-icon allocation-icon">
+              <FaEye />
+            </div>
+            <div className="card-content">
+              <h3>Room Allocation</h3>
+              <p>View and download the final room allocation details</p>
               <button 
-                className="action-button allocation-button"
+                className="action-button"
                 onClick={handleViewRoomAllocation}
               >
-                Final Room Allocation
+                View Allocation
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {showRoomAllocation && roomAllocationData && (
+          <div className="room-allocation-container">
+            <div className="allocation-header">
+              <h3>Room Allocation Details</h3>
+              <button 
+                className="download-button"
+                onClick={handleDownloadRoomAllocation}
+                title="Download Room Allocation"
+              >
+                Download
               </button>
             </div>
             
-            {showRoomAllocation && roomAllocationData && (
-              <div className="room-allocation-container">
-                <div className="allocation-header">
-                  <h3>Room Allocation Details</h3>
-                  <button 
-                    className="download-button"
-                    onClick={handleDownloadRoomAllocation}
-                    title="Download Room Allocation"
-                  >
-                    Download
-                  </button>
-                </div>
-                
-                <div className="table-wrapper">
-                  <table className="allocation-table">
-                    <thead>
-                      <tr>
-                        {roomAllocationData.headers.map((header, index) => (
-                          <th key={index}>{header}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {roomAllocationData.data.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
-                          {roomAllocationData.headers.map((header, colIndex) => (
-                            <td key={colIndex}>{row[header]}</td>
-                          ))}
-                        </tr>
+            <div className="table-wrapper">
+              <table className="allocation-table">
+                <thead>
+                  <tr>
+                    {roomAllocationData.headers.map((header, index) => (
+                      <th key={index}>{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {roomAllocationData.data.map((row, rowIndex) => (
+                    <tr key={rowIndex}>
+                      {roomAllocationData.headers.map((header, colIndex) => (
+                        <td key={colIndex}>{row[header]}</td>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-                
-                <button 
-                  className="close-button"
-                  onClick={() => setShowRoomAllocation(false)}
-                >
-                  Close
-                </button>
-              </div>
-            )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <button 
+              className="close-button"
+              onClick={() => setShowRoomAllocation(false)}
+            >
+              Close
+            </button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
