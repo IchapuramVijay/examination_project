@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUpload, FaDownload, FaChevronDown, FaFileUpload, FaFilter, FaSort, FaCalendarAlt, FaCheck, FaTimes, FaCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaUpload, FaDownload, FaChevronDown, FaFileUpload, FaFilter, FaSort, FaCalendarAlt, FaCheck, FaTimes, FaCircle, FaExclamationCircle, FaClock } from 'react-icons/fa';
 import './Admindashboard.css';
 
 const AdminDashboard = () => {
@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [filterDate, setFilterDate] = useState('');
+  const [filterSession, setFilterSession] = useState(''); // Added session filter
   const dropdownRef = useRef(null);
   const fileInputRef = useRef(null);
   
@@ -62,7 +63,7 @@ const AdminDashboard = () => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [navigate]);
+  }, [navigate, admin]);
 
   useEffect(() => {
     // When selected branch changes, reset filter date and apply filtering
@@ -147,6 +148,7 @@ const AdminDashboard = () => {
     setSelectedBranch(branch);
     setIsDropdownOpen(false);
     setFilterDate('');
+    setFilterSession(''); // Reset session filter
     setActiveTab('pending'); // Reset tab to pending when changing branch
 
     // Get employee data for selected branch from localStorage
@@ -154,14 +156,15 @@ const AdminDashboard = () => {
     if (employeeData) {
       const parsedData = JSON.parse(employeeData);
       
-      // Add status field if not present
-      const dataWithStatus = parsedData.map(emp => ({
+      // Add status field if not present and ensure session field exists
+      const dataWithStatusAndSession = parsedData.map(emp => ({
         ...emp,
-        status: emp.status || null // null = not decided, 'assigned' or 'rejected'
+        status: emp.status || null, // null = not decided, 'assigned' or 'rejected'
+        session: emp.session || 'AM' // Default to AM if session not specified
       }));
       
-      setBranchEmployees(dataWithStatus);
-      setFilteredEmployees(dataWithStatus);
+      setBranchEmployees(dataWithStatusAndSession);
+      setFilteredEmployees(dataWithStatusAndSession);
       
       // Reset sort config when branch changes
       setSortConfig({ key: null, direction: 'ascending' });
@@ -177,17 +180,33 @@ const AdminDashboard = () => {
       return;
     }
 
-    const csvData = localStorage.getItem(`employeesCSV_${selectedBranch}`);
-    if (!csvData) {
-      alert('No employee data available for this branch');
-      return;
-    }
+    // Generate CSV with session information
+    const headers = ['ID', 'Name', 'Department', 'Designation', 'Date', 'Session', 'Status'];
+    const csvRows = [
+      headers.join(',')
+    ];
 
-    const blob = new Blob([csvData], { type: 'text/csv' });
+    filteredEmployees.forEach(emp => {
+      const row = [
+        emp.id || emp.employeeId,
+        emp.name,
+        emp.department,
+        emp.designation,
+        emp.date,
+        emp.session || 'AM', // Include session with AM as default
+        emp.status || 'pending'
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    
+    // Create downloadable blob
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${selectedBranch}_employees.csv`;
+    link.download = `${selectedBranch}_employees_with_sessions.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -231,12 +250,21 @@ const AdminDashboard = () => {
       filtered = filtered.filter(emp => emp.date === filterDate);
     }
     
+    if (filterSession) {
+      filtered = filtered.filter(emp => emp.session === filterSession);
+    }
+    
     setFilteredEmployees(filtered);
   };
 
   // Handler for date filter change
   const handleDateFilterChange = (e) => {
     setFilterDate(e.target.value);
+  };
+  
+  // Handler for session filter change
+  const handleSessionFilterChange = (session) => {
+    setFilterSession(session === filterSession ? '' : session); // Toggle if same session clicked
   };
 
   // Handler to apply filters when button is clicked
@@ -248,6 +276,7 @@ const AdminDashboard = () => {
   // Handler to clear filters
   const handleClearFilters = () => {
     setFilterDate('');
+    setFilterSession('');
     setFilteredEmployees(branchEmployees);
     setShowFilterOptions(false);
   };
@@ -360,11 +389,11 @@ const AdminDashboard = () => {
   };
 
   // Fixed: Modified to only mark specific employee record as assigned/rejected
-  const handleAssignEmployee = (employeeId, date) => {
+  const handleAssignEmployee = (employeeId, date, session) => {
     // Update branchEmployees
     const updatedBranchEmployees = branchEmployees.map(emp => {
-      // Match by both ID and date to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+      // Match by ID, date AND session to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
         return { ...emp, status: 'assigned' };
       }
       return emp;
@@ -373,8 +402,8 @@ const AdminDashboard = () => {
 
     // Update filtered employees
     const updatedFilteredEmployees = filteredEmployees.map(emp => {
-      // Match by both ID and date to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+      // Match by ID, date AND session to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
         return { ...emp, status: 'assigned' };
       }
       return emp;
@@ -388,11 +417,11 @@ const AdminDashboard = () => {
   };
 
   // Fixed: Modified to only mark specific employee record as rejected
-  const handleRejectEmployee = (employeeId, date) => {
+  const handleRejectEmployee = (employeeId, date, session) => {
     // Update branchEmployees
     const updatedBranchEmployees = branchEmployees.map(emp => {
-      // Match by both ID and date to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+      // Match by ID, date AND session to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
         return { ...emp, status: 'rejected' };
       }
       return emp;
@@ -401,8 +430,8 @@ const AdminDashboard = () => {
 
     // Update filtered employees
     const updatedFilteredEmployees = filteredEmployees.map(emp => {
-      // Match by both ID and date to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+      // Match by ID, date AND session to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
         return { ...emp, status: 'rejected' };
       }
       return emp;
@@ -414,7 +443,7 @@ const AdminDashboard = () => {
       localStorage.setItem(`employees_${selectedBranch}`, JSON.stringify(updatedBranchEmployees));
     }
   };
-
+  
   const pendingCount = getEmployeesByStatus('pending').length;
 
   return (
@@ -525,6 +554,26 @@ const AdminDashboard = () => {
                 />
               </div>
               
+              <div className="filter-option">
+                <label><FaClock /> Filter by Session:</label>
+                <div className="session-filter-buttons">
+                  <button 
+                    type="button"
+                    className={`session-filter-btn ${filterSession === 'AM' ? 'active' : ''}`}
+                    onClick={() => handleSessionFilterChange('AM')}
+                  >
+                    AM
+                  </button>
+                  <button 
+                    type="button"
+                    className={`session-filter-btn ${filterSession === 'PM' ? 'active' : ''}`}
+                    onClick={() => handleSessionFilterChange('PM')}
+                  >
+                    PM
+                  </button>
+                </div>
+              </div>
+              
               <div className="filter-actions">
                 <button onClick={handleApplyFilters} className="apply-filter-btn">
                   Apply Filters
@@ -566,7 +615,11 @@ const AdminDashboard = () => {
 
           {selectedBranch && filteredEmployees.length > 0 && (
             <div className="employee-table-container">
-              <h4>Employee List - {selectedBranch} {filterDate && `(Date: ${filterDate})`}</h4>
+              <h4>
+                Employee List - {selectedBranch} 
+                {filterDate && ` (Date: ${filterDate})`}
+                {filterSession && ` (Session: ${filterSession})`}
+              </h4>
               <div className="table-actions">
                 <span className="results-count">
                   {activeTab === 'pending' ? 'Pending' : activeTab === 'assigned' ? 'Assigned' : 'Rejected'}: 
@@ -591,6 +644,7 @@ const AdminDashboard = () => {
                               <th>Department</th>
                               <th>Designation</th>
                               <th>Date</th>
+                              <th>Session</th>
                               {activeTab === 'pending' && <th>Actions</th>}
                             </tr>
                           </thead>
@@ -602,19 +656,24 @@ const AdminDashboard = () => {
                                 <td>{employee.department}</td>
                                 <td>{employee.designation}</td>
                                 <td>{new Date(employee.date).toLocaleDateString()}</td>
+                                <td>
+                                  <span className={`session-badge ${employee.session || 'AM'}`}>
+                                    {employee.session || 'AM'}
+                                  </span>
+                                </td>
                                 {activeTab === 'pending' && (
                                   <td className="employee-action-cell">
                                     <div className="employee-actions">
                                       <button 
                                         className="assign-btn" 
-                                        onClick={() => handleAssignEmployee(employee.id || employee.employeeId, employee.date)}
+                                        onClick={() => handleAssignEmployee(employee.id || employee.employeeId, employee.date, employee.session || 'AM')}
                                         title="Assign for Exam Duty"
                                       >
                                         <FaCheck />
                                       </button>
                                       <button 
                                         className="reject-btn" 
-                                        onClick={() => handleRejectEmployee(employee.id || employee.employeeId, employee.date)}
+                                        onClick={() => handleRejectEmployee(employee.id || employee.employeeId, employee.date, employee.session || 'AM')}
                                         title="Reject for Exam Duty"
                                       >
                                         <FaTimes />
@@ -646,7 +705,7 @@ const AdminDashboard = () => {
                 </div>
               ) : (
                 <div className="no-data-message">
-                  No {activeTab} employees found for {selectedBranch} {filterDate && `on ${filterDate}`}
+                  No {activeTab} employees found for {selectedBranch} {filterDate && `on ${filterDate}`} {filterSession && `for ${filterSession} session`}
                 </div>
               )}
             </div>
@@ -654,8 +713,8 @@ const AdminDashboard = () => {
           
           {selectedBranch && filteredEmployees.length === 0 && (
             <div className="no-data-message">
-              {filterDate ? 
-                `No employee data available for ${selectedBranch} on ${filterDate}` : 
+              {filterDate || filterSession ? 
+                `No employee data available for ${selectedBranch}${filterDate ? ` on ${filterDate}` : ''}${filterSession ? ` for ${filterSession} session` : ''}` : 
                 `No employee data available for ${selectedBranch}`
               }
             </div>

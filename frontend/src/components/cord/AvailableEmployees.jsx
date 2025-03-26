@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUserPlus, FaSave, FaArrowLeft, FaCalendarAlt } from 'react-icons/fa';
+import { FaUserPlus, FaSave, FaArrowLeft, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import './Availableemployees.css';
 
 const AvailableEmployees = () => {
@@ -10,9 +10,11 @@ const AvailableEmployees = () => {
   const [branchEmployees, setBranchEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedSession, setSelectedSession] = useState('AM'); // Default to AM
   const [searchTerm, setSearchTerm] = useState('');
   const [userData, setUserData] = useState(null);
   const [todayDate, setTodayDate] = useState('');
+
 
   // Department-specific employee data
   const departmentEmployees = {
@@ -379,19 +381,20 @@ const AvailableEmployees = () => {
       return;
     }
     
-    // Check if employee is already selected for this date
+    // Check if employee is already selected for this date and session
     const alreadyAdded = selectedEmployees.some(
-      emp => emp.id === employee.id && emp.date === selectedDate
+      emp => emp.id === employee.id && emp.date === selectedDate && emp.session === selectedSession
     );
     
     if (alreadyAdded) {
-      alert('This employee is already added for the selected date');
+      alert(`This employee is already added for the selected date (${selectedSession})`);
       return;
     }
     
     const newSelection = {
       ...employee,
-      date: selectedDate
+      date: selectedDate,
+      session: selectedSession
     };
     
     setSelectedEmployees(prev => [...prev, newSelection]);
@@ -403,7 +406,7 @@ const AvailableEmployees = () => {
     
     // Remove from both displayed employees (for UI) and selectedEmployees (for data storage)
     setSelectedEmployees(prev => prev.filter(emp => 
-      !(emp.id === employeeToRemove.id && emp.date === employeeToRemove.date)
+      !(emp.id === employeeToRemove.id && emp.date === employeeToRemove.date && emp.session === employeeToRemove.session)
     ));
   };
 
@@ -413,11 +416,11 @@ const AvailableEmployees = () => {
       return;
     }
 
-    const headers = ['ID', 'Name', 'Department', 'Designation', 'Date'];
+    const headers = ['ID', 'Name', 'Department', 'Designation', 'Date', 'Session'];
     const csvContent = [
       headers.join(','),
       ...selectedEmployees.map(emp => 
-        [emp.id, emp.name, emp.department, emp.designation, emp.date].join(',')
+        [emp.id, emp.name, emp.department, emp.designation, emp.date, emp.session].join(',')
       )
     ].join('\n');
 
@@ -455,20 +458,44 @@ const AvailableEmployees = () => {
 
         <div className="input-section">
           <div className="date-selection-row">
-            <div className="date-picker">
-              <label className="input-label">
-                <FaCalendarAlt /> Select Date
-              </label>
-              <input
-                type="date"
-                className="date-input"
-                value={selectedDate}
-                min={todayDate} // Prevent selecting past dates
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-              {selectedDate < todayDate && (
-                <p className="date-warning">Cannot select dates in the past</p>
-              )}
+            <div className="selection-wrapper">
+              <div className="date-picker">
+                <label className="input-label">
+                  <FaCalendarAlt /> Select Date
+                </label>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={selectedDate}
+                  min={todayDate} // Prevent selecting past dates
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+                {selectedDate < todayDate && (
+                  <p className="date-warning">Cannot select dates in the past</p>
+                )}
+              </div>
+              
+              <div className="session-selector">
+                <label className="input-label">
+                  <FaClock /> Select Session
+                </label>
+                <div className="session-buttons">
+                  <button
+                    type="button"
+                    className={`session-btn ${selectedSession === 'AM' ? 'active' : ''}`}
+                    onClick={() => setSelectedSession('AM')}
+                  >
+                    AM
+                  </button>
+                  <button
+                    type="button"
+                    className={`session-btn ${selectedSession === 'PM' ? 'active' : ''}`}
+                    onClick={() => setSelectedSession('PM')}
+                  >
+                    PM
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -503,7 +530,7 @@ const AvailableEmployees = () => {
             onClick={handleAddEmployee}
             disabled={!isDateValid(selectedDate)}
           >
-            <FaUserPlus /> Add Employee for {selectedDate}
+            <FaUserPlus /> Add Employee for {selectedDate} ({selectedSession})
           </button>
         </div>
 
@@ -520,13 +547,14 @@ const AvailableEmployees = () => {
                 <th>Department</th>
                 <th>Designation</th>
                 <th>Date</th>
+                <th>Session</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {displayedEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="empty-table-message">
+                  <td colSpan="7" className="empty-table-message">
                     No employees selected for today or future dates yet. Please select employees from the dropdown.
                   </td>
                 </tr>
@@ -540,6 +568,9 @@ const AvailableEmployees = () => {
                     <td>
                       <span className="date-value">{emp.date}</span>
                       {emp.date === todayDate && <span className="today-badge">Today</span>}
+                    </td>
+                    <td>
+                      <span className={`session-badge ${emp.session}`}>{emp.session}</span>
                     </td>
                     <td>
                       <button 

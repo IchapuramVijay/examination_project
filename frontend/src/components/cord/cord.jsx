@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUserCheck, FaCalendarAlt, FaDownload, FaEye, FaChartBar } from 'react-icons/fa';
+import { FaUserCheck, FaCalendarAlt, FaDownload, FaEye, FaChartBar, FaTimes } from 'react-icons/fa';
 import './cord.css';
 
 const Cord = () => {
@@ -12,6 +12,11 @@ const Cord = () => {
   const [employeeStats, setEmployeeStats] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  
+  // New state for showing exam section data
+  const [showExamSectionData, setShowExamSectionData] = useState(false);
+  const [examSectionData, setExamSectionData] = useState(null);
+  const [examSectionDataTimestamp, setExamSectionDataTimestamp] = useState(null);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -117,65 +122,105 @@ const Cord = () => {
     navigate('/available-employees');
   };
 
-  // Updated function to preserve the exact format of exam schedule data
-  const handleExamScheduleDownload = () => {
+  // Function to handle viewing exam section data - UPDATED TO FILTER BY BRANCH
+  const handleViewExamSectionData = () => {
     try {
-      // Get the exam schedule from localStorage
-      const examScheduleData = localStorage.getItem('examSchedule');
-      if (!examScheduleData) {
-        alert('No exam schedule available at this time');
+      // Get the invigilator data uploaded by the exam section
+      const invigilatorData = localStorage.getItem('invigilatorData');
+      if (!invigilatorData) {
+        alert('No data uploaded by the exam section is available yet.');
         return;
       }
       
-      let csvContent = "";
+      const parsedData = JSON.parse(invigilatorData);
       
-      try {
-        // First try to parse the data as JSON
-        const parsedData = JSON.parse(examScheduleData);
+      // Get coordinator's branch
+      const coordinatorBranch = userData.branch;
+      if (!coordinatorBranch) {
+        alert('Error: Unable to determine your department.');
+        return;
+      }
+      
+      // Filter branchData to only include the coordinator's branch
+      const filteredBranchData = {};
+      if (parsedData.branchData && parsedData.branchData[coordinatorBranch] !== undefined) {
+        filteredBranchData[coordinatorBranch] = parsedData.branchData[coordinatorBranch];
+      } else {
+        alert('No invigilator data available for your department.');
+        return;
+      }
+      
+      // Format the data for display, but only include the coordinator's branch
+      const formattedData = {
+        examDates: parsedData.examDates || [],
+        branchData: filteredBranchData,
+        totalInvigilators: filteredBranchData[coordinatorBranch] || 0,
+        uploadDate: parsedData.uploadDate ? new Date(parsedData.uploadDate) : null
+      };
+      
+      setExamSectionData(formattedData);
+      setExamSectionDataTimestamp(formattedData.uploadDate);
+      
+      // Close other panels and show exam section data
+      setShowExamSectionData(true);
+      setShowRoomAllocation(false);
+      setShowEmployeeStats(false);
+    } catch (error) {
+      console.error('Error loading exam section data:', error);
+      alert('Error loading data from exam section. Please try again later.');
+    }
+  };
+
+  // Function to download exam section data - UPDATED TO FILTER BY BRANCH
+  const handleDownloadExamSectionData = () => {
+    try {
+      // Get the invigilator data uploaded by exam section
+      const invigilatorData = localStorage.getItem('invigilatorData');
+      if (!invigilatorData) {
+        alert('No data to download');
+        return;
+      }
+      
+      const parsedData = JSON.parse(invigilatorData);
+      const coordinatorBranch = userData.branch;
+      
+      // Create CSV content for download - ONLY FOR THIS BRANCH
+      let csvContent = 'Branch,Total Invigilators Required\n';
+      
+      // Add only this branch's data
+      if (parsedData.branchData && parsedData.branchData[coordinatorBranch] !== undefined) {
+        csvContent += `${coordinatorBranch},${parsedData.branchData[coordinatorBranch]}\n`;
+      } else {
+        alert('No data available for your department.');
+        return;
+      }
+      
+      // Add timestamp
+      if (parsedData.uploadDate) {
+        csvContent += `\nLast Updated,${new Date(parsedData.uploadDate).toLocaleString()}\n`;
+      }
+      
+      // Add detailed schedule if available - ONLY FOR THIS BRANCH
+      if (parsedData.examDates && parsedData.examDates.length > 0) {
+        csvContent += '\n\nDetailed Schedule:\n';
         
-        // If the data contains csvContent field, use it directly
-        if (parsedData.csvContent) {
-          csvContent = parsedData.csvContent;
-        } else if (parsedData.originalContent) {
-          // If there's an originalContent field, use that
-          csvContent = parsedData.originalContent;
-        } else {
-          // If it's a structured JSON object, convert it to CSV without reformatting
-          csvContent = 'Branch,';
-          
-          // Get column headers (day periods)
-          const firstBranch = Object.keys(parsedData)[0];
-          if (firstBranch && parsedData[firstBranch]) {
-            const dayPeriods = Object.keys(parsedData[firstBranch]);
-            // Sort to ensure consistent order
-            dayPeriods.sort();
-            
-            // Add original column headers without reformatting
-            dayPeriods.forEach(dp => {
-              csvContent += dp + ',';
-            });
-            
-            csvContent = csvContent.slice(0, -1) + '\n';
-            
-            // Add data rows
-            Object.keys(parsedData).forEach(branch => {
-              csvContent += branch + ',';
-              dayPeriods.forEach(dp => {
-                csvContent += (parsedData[branch][dp] || '0') + ',';
-              });
-              csvContent = csvContent.slice(0, -1) + '\n';
-            });
+        // Add header row with all dates
+        csvContent += 'Date,AM Session,PM Session\n';
+        
+        // Add data for each date
+        parsedData.examDates.forEach(dateObj => {
+          if (dateObj.date) {
+            const amValue = dateObj.amValues && dateObj.amValues[coordinatorBranch] 
+              ? dateObj.amValues[coordinatorBranch] 
+              : '0';
+              
+            const pmValue = dateObj.pmValues && dateObj.pmValues[coordinatorBranch]
+              ? dateObj.pmValues[coordinatorBranch]
+              : '0';
+              
+            csvContent += `${dateObj.date},${amValue},${pmValue}\n`;
           }
-        }
-      } catch (parseError) {
-        // If parsing as JSON fails, it might already be a CSV string
-        // Use it directly without any modifications
-        csvContent = examScheduleData;
-      }
-      
-      if (!csvContent) {
-        alert('Could not process the exam schedule data');
-        return;
+        });
       }
       
       // Download the CSV
@@ -183,80 +228,14 @@ const Cord = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'exam_schedule.csv';
+      link.download = `${coordinatorBranch}_invigilator_requirements.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading exam schedule:', error);
-      alert('Error processing exam schedule data');
-    }
-  };
-
-  // Function to handle showing the final room allocation
-  const handleViewRoomAllocation = () => {
-    try {
-      // Get the room allocation data from localStorage (stored by admin)
-      const roomAllocation = localStorage.getItem('finalRoomAllocation');
-      if (!roomAllocation) {
-        alert('No room allocation data available yet. Please check back later.');
-        return;
-      }
-      
-      // Parse the CSV content
-      const rows = roomAllocation.split('\n');
-      const headers = rows[0].split(',');
-      
-      // Parse data rows
-      const data = [];
-      for (let i = 1; i < rows.length; i++) {
-        if (rows[i].trim() === '') continue;
-        
-        const values = rows[i].split(',');
-        const rowData = {};
-        
-        headers.forEach((header, index) => {
-          rowData[header.trim()] = values[index] ? values[index].trim() : '';
-        });
-        
-        data.push(rowData);
-      }
-      
-      // Set the data to state to display it
-      setRoomAllocationData({ headers, data });
-      // Show the allocation section
-      setShowRoomAllocation(true);
-      // Hide employee stats if open
-      setShowEmployeeStats(false);
-    } catch (error) {
-      console.error('Error processing room allocation data:', error);
-      alert('Error loading room allocation data. Please try again later.');
-    }
-  };
-
-  // Function to download the room allocation data
-  const handleDownloadRoomAllocation = () => {
-    try {
-      const roomAllocation = localStorage.getItem('finalRoomAllocation');
-      if (!roomAllocation) {
-        alert('No room allocation data available');
-        return;
-      }
-      
-      // Download the CSV
-      const blob = new Blob([roomAllocation], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'room_allocation.csv';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading room allocation:', error);
-      alert('Error processing room allocation data');
+      console.error('Error downloading exam section data:', error);
+      alert('Error processing data for download');
     }
   };
 
@@ -264,6 +243,7 @@ const Cord = () => {
   const handleViewEmployeeStats = () => {
     setShowEmployeeStats(true);
     setShowRoomAllocation(false);
+    setShowExamSectionData(false);
   };
 
   // Function to handle month change
@@ -295,7 +275,7 @@ const Cord = () => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `employee_assignments_${getMonthName(selectedMonth)}_${selectedYear}.csv`;
+    link.download = `${userData.branch}_employee_assignments_${getMonthName(selectedMonth)}_${selectedYear}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -332,6 +312,13 @@ const Cord = () => {
     return months[monthIndex];
   };
 
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
   if (!userData) return null;
 
   return (
@@ -364,32 +351,18 @@ const Cord = () => {
               <FaCalendarAlt />
             </div>
             <div className="card-content">
-              <h3>Required Employees Schedule</h3>
-              <p>Download the number of required employees for the examination schedule</p>
+              <h3>Exam Section Data</h3>
+              <p>View and download the invigilator requirements for your department</p>
               <button 
                 className="action-button"
-                onClick={handleExamScheduleDownload}
+                onClick={handleViewExamSectionData}
               >
-                <FaDownload /> Download Required List
+                <FaEye /> View Requirements
               </button>
             </div>
           </div>
 
-          <div className="dashboard-card">
-            <div className="card-icon allocation-icon">
-              <FaEye />
-            </div>
-            <div className="card-content">
-              <h3>Room Allocation</h3>
-              <p>View and download the final room allocation details</p>
-              <button 
-                className="action-button"
-                onClick={handleViewRoomAllocation}
-              >
-                View Allocation
-              </button>
-            </div>
-          </div>
+          {/* Room Allocation card removed */}
 
           <div className="dashboard-card">
             <div className="card-icon stats-icon">
@@ -408,89 +381,163 @@ const Cord = () => {
           </div>
         </div>
 
-        {showRoomAllocation && roomAllocationData && (
-          <div className="room-allocation-container">
-            <div className="allocation-header">
-              <h3>Room Allocation Details</h3>
+        {/* Exam Section Data Display - UPDATED TO SHOW ONLY COORDINATOR'S BRANCH */}
+        {showExamSectionData && examSectionData && (
+          <div className="exam-section-data-container">
+            <div className="section-header">
+              <h3>{getBranchLabel(userData.branch)} - Invigilator Requirements</h3>
+              <div className="section-actions">
+                <button 
+                  className="download-button"
+                  onClick={handleDownloadExamSectionData}
+                  title="Download Requirements"
+                >
+                  <FaDownload /> Download
+                </button>
+                <button 
+                  className="close-panel-button"
+                  onClick={() => setShowExamSectionData(false)}
+                  title="Close"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
+            
+            {examSectionDataTimestamp && (
+              <div className="timestamp-info">
+                <p>Last Updated: {examSectionDataTimestamp.toLocaleString()}</p>
+                <p>Total Invigilators Required: <strong>{examSectionData.totalInvigilators}</strong></p>
+              </div>
+            )}
+
+            <div className="section-content">
+              <h4>Department Overview</h4>
+              <div className="department-summary">
+                <div className="summary-card">
+                  <div className="summary-title">Department</div>
+                  <div className="summary-value">{userData.branch}</div>
+                </div>
+                <div className="summary-card">
+                  <div className="summary-title">Total Invigilators Required</div>
+                  <div className="summary-value highlight">{examSectionData.totalInvigilators}</div>
+                </div>
+              </div>
+
+              {examSectionData.examDates && examSectionData.examDates.length > 0 && (
+                <>
+                  <h4>Detailed Schedule</h4>
+                  <div className="table-wrapper">
+                    <table className="schedule-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>AM Session</th>
+                          <th>PM Session</th>
+                          <th>Daily Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {examSectionData.examDates.map((dateObj, index) => {
+                          if (!dateObj.date) return null;
+                          
+                          const amValue = dateObj.amValues && dateObj.amValues[userData.branch] 
+                            ? parseInt(dateObj.amValues[userData.branch]) 
+                            : 0;
+                            
+                          const pmValue = dateObj.pmValues && dateObj.pmValues[userData.branch]
+                            ? parseInt(dateObj.pmValues[userData.branch])
+                            : 0;
+                            
+                          const dailyTotal = amValue + pmValue;
+                          
+                          // Only show dates with non-zero requirements
+                          if (dailyTotal === 0) return null;
+                          
+                          return (
+                            <tr key={index}>
+                              <td>{formatDate(dateObj.date)}</td>
+                              <td className={amValue > 0 ? "count-cell highlight-value" : "count-cell"}>
+                                {amValue}
+                              </td>
+                              <td className={pmValue > 0 ? "count-cell highlight-value" : "count-cell"}>
+                                {pmValue}
+                              </td>
+                              <td className="count-cell total-value">{dailyTotal}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="actions-footer">
               <button 
-                className="download-button"
-                onClick={handleDownloadRoomAllocation}
-                title="Download Room Allocation"
+                className="close-button"
+                onClick={() => setShowExamSectionData(false)}
               >
-                Download
+                Close
               </button>
             </div>
-            
-            <div className="table-wrapper">
-              <table className="allocation-table">
-                <thead>
-                  <tr>
-                    {roomAllocationData.headers.map((header, index) => (
-                      <th key={index}>{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {roomAllocationData.data.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {roomAllocationData.headers.map((header, colIndex) => (
-                        <td key={colIndex}>{row[header]}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            <button 
-              className="close-button"
-              onClick={() => setShowRoomAllocation(false)}
-            >
-              Close
-            </button>
           </div>
         )}
+
+        {/* Room Allocation panel code kept for future use but not shown */}
 
         {showEmployeeStats && (
           <div className="employee-stats-container">
             <div className="stats-header">
               <h3>Employee Assignment Statistics</h3>
-              <div className="month-selector">
-                <div className="selector-group">
-                  <label htmlFor="monthSelect">Month:</label>
-                  <select 
-                    id="monthSelect" 
-                    value={selectedMonth} 
-                    onChange={handleMonthChange}
-                    className="month-select"
-                  >
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i} value={i}>{getMonthName(i)}</option>
-                    ))}
-                  </select>
+              <div className="right-controls">
+                <div className="month-selector">
+                  <div className="selector-group">
+                    <label htmlFor="monthSelect">Month:</label>
+                    <select 
+                      id="monthSelect" 
+                      value={selectedMonth} 
+                      onChange={handleMonthChange}
+                      className="month-select"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i} value={i}>{getMonthName(i)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="selector-group">
+                    <label htmlFor="yearSelect">Year:</label>
+                    <select 
+                      id="yearSelect" 
+                      value={selectedYear} 
+                      onChange={handleYearChange}
+                      className="year-select"
+                    >
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <option key={i} value={new Date().getFullYear() - 2 + i}>
+                          {new Date().getFullYear() - 2 + i}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="selector-group">
-                  <label htmlFor="yearSelect">Year:</label>
-                  <select 
-                    id="yearSelect" 
-                    value={selectedYear} 
-                    onChange={handleYearChange}
-                    className="year-select"
+                <div className="section-actions">
+                  <button 
+                    className="download-button"
+                    onClick={handleDownloadEmployeeStats}
+                    title="Download Statistics"
                   >
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <option key={i} value={new Date().getFullYear() - 2 + i}>
-                        {new Date().getFullYear() - 2 + i}
-                      </option>
-                    ))}
-                  </select>
+                    <FaDownload /> Export
+                  </button>
+                  <button 
+                    className="close-panel-button"
+                    onClick={() => setShowEmployeeStats(false)}
+                    title="Close"
+                  >
+                    <FaTimes />
+                  </button>
                 </div>
-                <button 
-                  className="download-button"
-                  onClick={handleDownloadEmployeeStats}
-                  title="Download Statistics"
-                >
-                  <FaDownload /> Export
-                </button>
               </div>
             </div>
             
@@ -535,12 +582,14 @@ const Cord = () => {
               </table>
             </div>
             
-            <button 
-              className="close-button"
-              onClick={() => setShowEmployeeStats(false)}
-            >
-              Close
-            </button>
+            <div className="actions-footer">
+              <button 
+                className="close-button"
+                onClick={() => setShowEmployeeStats(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
         )}
       </div>

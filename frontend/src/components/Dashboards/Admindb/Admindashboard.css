@@ -1048,3 +1048,67 @@
     background-color: #f8f9fa;
   }
 }
+.session-filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.session-filter-btn {
+  flex: 1;
+  padding: 8px 20px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.session-filter-btn.active {
+  background: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+
+.session-filter-btn:hover:not(.active) {
+  background: #e9ecef;
+}
+
+/* Session badge in employee table */
+.session-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.session-badge.AM {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.session-badge.PM {
+  background-color: #6f42c1;
+  color: white;
+}
+
+/* Responsive fixes for session elements */
+@media (max-width: 768px) {
+  .session-filter-buttons {
+    width: 100%;
+  }
+  
+  .session-filter-btn {
+    padding: 8px 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .employee-table th:nth-child(6),
+  .employee-table td:nth-child(6) {
+    min-width: 60px;
+  }
+}
