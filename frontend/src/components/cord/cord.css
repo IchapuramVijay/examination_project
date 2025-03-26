@@ -43,7 +43,7 @@
 
 .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
@@ -88,6 +88,11 @@
 .allocation-icon {
   color: #fd7e14;
   background-color: rgba(253, 126, 20, 0.1);
+}
+
+.stats-icon {
+  color: #6f42c1;
+  background-color: rgba(111, 66, 193, 0.1);
 }
 
 .card-content {
@@ -137,8 +142,9 @@
   background-color: #3a56d6;
 }
 
-/* Room allocation container */
-.room-allocation-container {
+/* Common container styles for allocation and employee stats */
+.room-allocation-container,
+.employee-stats-container {
   margin-top: 1.5rem;
   padding: 1.5rem;
   background-color: white;
@@ -147,21 +153,25 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Header for allocation section */
-.allocation-header {
+/* Header for containers */
+.allocation-header,
+.stats-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.allocation-header h3 {
+.allocation-header h3,
+.stats-header h3 {
   margin: 0;
   color: #2c3e50;
   font-size: 1.2rem;
 }
 
-/* Download button for allocation */
+/* Download/export button */
 .download-button {
   background-color: #28a745;
   color: white;
@@ -171,10 +181,61 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .download-button:hover {
   background-color: #218838;
+}
+
+/* Month and year selector */
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.selector-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.selector-group label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.month-select,
+.year-select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 0.9rem;
+}
+
+/* Stats info section */
+.stats-info {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  padding: 0.8rem;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.stats-info p {
+  margin: 0;
+  color: #495057;
+}
+
+.stats-info strong {
+  color: #212529;
 }
 
 /* Table wrapper */
@@ -185,34 +246,84 @@
   border: 1px solid #dee2e6;
 }
 
-/* Allocation table styling */
-.allocation-table {
+/* Table styling */
+.allocation-table,
+.stats-table {
   width: 100%;
   border-collapse: collapse;
 }
 
 .allocation-table th,
-.allocation-table td {
+.allocation-table td,
+.stats-table th,
+.stats-table td {
   padding: 0.75rem;
   text-align: left;
   border: 1px solid #dee2e6;
 }
 
-.allocation-table th {
+.allocation-table th,
+.stats-table th {
   background-color: #f1f1f1;
   font-weight: 600;
   color: #333;
 }
 
-.allocation-table tr:nth-child(even) {
+.allocation-table tr:nth-child(even),
+.stats-table tr:nth-child(even) {
   background-color: #f9f9f9;
 }
 
-.allocation-table tr:hover {
+.allocation-table tr:hover,
+.stats-table tr:hover {
   background-color: #f0f7ff;
 }
 
-/* Close button for allocation view */
+/* Employee stats specific styling */
+.count-cell {
+  text-align: center;
+}
+
+.count-badge {
+  display: inline-block;
+  min-width: 30px;
+  padding: 0.25rem 0.5rem;
+  font-weight: 600;
+  text-align: center;
+  border-radius: 50px;
+}
+
+.count-badge.zero {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+.count-badge.low {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.count-badge.medium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.count-badge.high {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.has-assignments {
+  font-weight: 500;
+}
+
+.no-data {
+  text-align: center;
+  color: #6c757d;
+  padding: 2rem !important;
+}
+
+/* Close button */
 .close-button {
   background-color: #6c757d;
   color: white;
@@ -241,13 +352,50 @@
     grid-template-columns: 1fr;
   }
   
-  .allocation-header {
+  .allocation-header,
+  .stats-header {
     flex-direction: column;
-    gap: 0.8rem;
     align-items: flex-start;
   }
   
-  .room-allocation-container {
+  .month-selector {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .selector-group {
+    width: 100%;
+  }
+  
+  .month-select,
+  .year-select {
+    flex: 1;
+  }
+  
+  .stats-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .room-allocation-container,
+  .employee-stats-container {
     padding: 1rem;
+  }
+
+  /* Make tables more compact on mobile */
+  .allocation-table th,
+  .allocation-table td,
+  .stats-table th,
+  .stats-table td {
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  /* Adjust badge size on mobile */
+  .count-badge {
+    min-width: 24px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.85rem;
   }
 }

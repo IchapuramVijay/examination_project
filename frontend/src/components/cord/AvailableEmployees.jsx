@@ -6,11 +6,13 @@ import './Availableemployees.css';
 const AvailableEmployees = () => {
   const navigate = useNavigate();
   const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [displayedEmployees, setDisplayedEmployees] = useState([]);
   const [branchEmployees, setBranchEmployees] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [userData, setUserData] = useState(null);
+  const [todayDate, setTodayDate] = useState('');
 
   // Department-specific employee data
   const departmentEmployees = {
@@ -330,6 +332,7 @@ const AvailableEmployees = () => {
     const today = new Date();
     const formattedDate = today.toISOString().split('T')[0];
     setSelectedDate(formattedDate);
+    setTodayDate(formattedDate);
     
     // Check if there are already saved employees for this branch
     const savedData = localStorage.getItem(`employees_${data.branch}`);
@@ -345,9 +348,27 @@ const AvailableEmployees = () => {
     }
   }, [navigate]);
 
+  // Filter displayed employees to only show today and future dates
+  useEffect(() => {
+    if (selectedEmployees.length > 0 && todayDate) {
+      const filteredEmployees = selectedEmployees.filter(emp => {
+        return emp.date >= todayDate;
+      });
+      setDisplayedEmployees(filteredEmployees);
+    } else {
+      setDisplayedEmployees([]);
+    }
+  }, [selectedEmployees, todayDate]);
+
   const handleAddEmployee = () => {
     if (!selectedEmployee || !selectedDate) {
       alert('Please select an employee and date');
+      return;
+    }
+    
+    // Don't allow adding employees for past dates
+    if (selectedDate < todayDate) {
+      alert('Cannot add employees for past dates');
       return;
     }
     
@@ -378,7 +399,12 @@ const AvailableEmployees = () => {
   };
 
   const handleRemoveEmployee = (index) => {
-    setSelectedEmployees(prev => prev.filter((_, i) => i !== index));
+    const employeeToRemove = displayedEmployees[index];
+    
+    // Remove from both displayed employees (for UI) and selectedEmployees (for data storage)
+    setSelectedEmployees(prev => prev.filter(emp => 
+      !(emp.id === employeeToRemove.id && emp.date === employeeToRemove.date)
+    ));
   };
 
   const handleExport = () => {
@@ -410,6 +436,11 @@ const AvailableEmployees = () => {
       emp.designation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Function to validate if a date is in the future or today
+  const isDateValid = (date) => {
+    return date >= todayDate;
+  };
+
   return (
     <div className="available-employees-container">
       <div className="employees-card">
@@ -432,8 +463,12 @@ const AvailableEmployees = () => {
                 type="date"
                 className="date-input"
                 value={selectedDate}
+                min={todayDate} // Prevent selecting past dates
                 onChange={(e) => setSelectedDate(e.target.value)}
               />
+              {selectedDate < todayDate && (
+                <p className="date-warning">Cannot select dates in the past</p>
+              )}
             </div>
           </div>
           
@@ -463,13 +498,20 @@ const AvailableEmployees = () => {
             </select>
           </div>
           
-          <button className="add-button" onClick={handleAddEmployee}>
+          <button 
+            className={`add-button ${!isDateValid(selectedDate) ? 'disabled' : ''}`}
+            onClick={handleAddEmployee}
+            disabled={!isDateValid(selectedDate)}
+          >
             <FaUserPlus /> Add Employee for {selectedDate}
           </button>
         </div>
 
         <div className="table-section">
-          <h3 className="table-title">Selected Employees</h3>
+          <h3 className="table-title">
+            Selected Employees (Today & Future Dates Only)
+            <span className="date-indicator">Current Date: {todayDate}</span>
+          </h3>
           <table className="employees-table">
             <thead>
               <tr>
@@ -482,20 +524,23 @@ const AvailableEmployees = () => {
               </tr>
             </thead>
             <tbody>
-              {selectedEmployees.length === 0 ? (
+              {displayedEmployees.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="empty-table-message">
-                    No employees selected yet. Please select employees from the dropdown.
+                    No employees selected for today or future dates yet. Please select employees from the dropdown.
                   </td>
                 </tr>
               ) : (
-                selectedEmployees.map((emp, index) => (
-                  <tr key={index}>
+                displayedEmployees.map((emp, index) => (
+                  <tr key={index} className={emp.date === todayDate ? 'today-row' : ''}>
                     <td>{emp.id}</td>
                     <td>{emp.name}</td>
                     <td>{emp.department}</td>
                     <td>{emp.designation}</td>
-                    <td>{emp.date}</td>
+                    <td>
+                      <span className="date-value">{emp.date}</span>
+                      {emp.date === todayDate && <span className="today-badge">Today</span>}
+                    </td>
                     <td>
                       <button 
                         className="remove-button"
@@ -513,6 +558,9 @@ const AvailableEmployees = () => {
 
         {selectedEmployees.length > 0 && (
           <div className="save-section">
+            <div className="employees-count">
+              <span className="count-badge">{displayedEmployees.length}</span> of {selectedEmployees.length} employees shown (past dates hidden)
+            </div>
             <button className="save-button" onClick={handleExport}>
               <FaSave /> Save Employee List
             </button>

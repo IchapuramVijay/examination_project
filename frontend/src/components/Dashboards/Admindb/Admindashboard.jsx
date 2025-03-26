@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUpload, FaDownload, FaChevronDown, FaFileUpload, FaFilter, FaSort, FaCalendarAlt } from 'react-icons/fa';
+import { FaUpload, FaDownload, FaChevronDown, FaFileUpload, FaFilter, FaSort, FaCalendarAlt, FaCheck, FaTimes, FaCircle, FaExclamationCircle } from 'react-icons/fa';
 import './Admindashboard.css';
 
 const AdminDashboard = () => {
@@ -26,6 +26,9 @@ const AdminDashboard = () => {
   
   // State for showing filter options
   const [showFilterOptions, setShowFilterOptions] = useState(false);
+  
+  // State for showing employee status tabs
+  const [activeTab, setActiveTab] = useState('pending');
 
   // Building blocks with static room data
   const blocks = [
@@ -68,17 +71,97 @@ const AdminDashboard = () => {
     }
   }, [branchEmployees]);
 
+  // Group employees by month
+  const getGroupedEmployees = () => {
+    if (!filteredEmployees.length) return {};
+    
+    // First sort by date (ascending)
+    const sortedByDate = [...filteredEmployees].sort((a, b) => {
+      return new Date(a.date) - new Date(b.date);
+    });
+    
+    // Then group by month
+    const grouped = {};
+    sortedByDate.forEach(emp => {
+      if (!emp.date) return;
+      
+      const date = new Date(emp.date);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!grouped[monthYear]) {
+        grouped[monthYear] = [];
+      }
+      
+      grouped[monthYear].push(emp);
+    });
+    
+    return grouped;
+  };
+
+  // Get employees by status (assigned, rejected, pending)
+  const getEmployeesByStatus = (status) => {
+    if (status === 'assigned') {
+      return filteredEmployees.filter(emp => emp.status === 'assigned');
+    } else if (status === 'rejected') {
+      return filteredEmployees.filter(emp => emp.status === 'rejected');
+    } else { // pending
+      return filteredEmployees.filter(emp => emp.status !== 'assigned' && emp.status !== 'rejected');
+    }
+  };
+
+  // Get grouped employees by status
+  const getGroupedEmployeesByStatus = (status) => {
+    const statusEmployees = getEmployeesByStatus(status);
+    
+    // First sort by date (ascending)
+    const sortedByDate = [...statusEmployees].sort((a, b) => {
+      return new Date(a.date) - new Date(b.date);
+    });
+    
+    // Then group by month
+    const grouped = {};
+    sortedByDate.forEach(emp => {
+      if (!emp.date) return;
+      
+      const date = new Date(emp.date);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!grouped[monthYear]) {
+        grouped[monthYear] = [];
+      }
+      
+      grouped[monthYear].push(emp);
+    });
+    
+    return grouped;
+  };
+
+  // Format month year string for display
+  const formatMonthYear = (monthYearStr) => {
+    const [year, month] = monthYearStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  };
+
   const handleBranchSelect = (branch) => {
     setSelectedBranch(branch);
     setIsDropdownOpen(false);
     setFilterDate('');
+    setActiveTab('pending'); // Reset tab to pending when changing branch
 
     // Get employee data for selected branch from localStorage
     const employeeData = localStorage.getItem(`employees_${branch}`);
     if (employeeData) {
       const parsedData = JSON.parse(employeeData);
-      setBranchEmployees(parsedData);
-      setFilteredEmployees(parsedData);
+      
+      // Add status field if not present
+      const dataWithStatus = parsedData.map(emp => ({
+        ...emp,
+        status: emp.status || null // null = not decided, 'assigned' or 'rejected'
+      }));
+      
+      setBranchEmployees(dataWithStatus);
+      setFilteredEmployees(dataWithStatus);
       
       // Reset sort config when branch changes
       setSortConfig({ key: null, direction: 'ascending' });
@@ -276,6 +359,64 @@ const AdminDashboard = () => {
     }
   };
 
+  // Fixed: Modified to only mark specific employee record as assigned/rejected
+  const handleAssignEmployee = (employeeId, date) => {
+    // Update branchEmployees
+    const updatedBranchEmployees = branchEmployees.map(emp => {
+      // Match by both ID and date to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+        return { ...emp, status: 'assigned' };
+      }
+      return emp;
+    });
+    setBranchEmployees(updatedBranchEmployees);
+
+    // Update filtered employees
+    const updatedFilteredEmployees = filteredEmployees.map(emp => {
+      // Match by both ID and date to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+        return { ...emp, status: 'assigned' };
+      }
+      return emp;
+    });
+    setFilteredEmployees(updatedFilteredEmployees);
+
+    // Save updated data to localStorage
+    if (selectedBranch) {
+      localStorage.setItem(`employees_${selectedBranch}`, JSON.stringify(updatedBranchEmployees));
+    }
+  };
+
+  // Fixed: Modified to only mark specific employee record as rejected
+  const handleRejectEmployee = (employeeId, date) => {
+    // Update branchEmployees
+    const updatedBranchEmployees = branchEmployees.map(emp => {
+      // Match by both ID and date to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+        return { ...emp, status: 'rejected' };
+      }
+      return emp;
+    });
+    setBranchEmployees(updatedBranchEmployees);
+
+    // Update filtered employees
+    const updatedFilteredEmployees = filteredEmployees.map(emp => {
+      // Match by both ID and date to only update the specific record
+      if ((emp.id || emp.employeeId) === employeeId && emp.date === date) {
+        return { ...emp, status: 'rejected' };
+      }
+      return emp;
+    });
+    setFilteredEmployees(updatedFilteredEmployees);
+
+    // Save updated data to localStorage
+    if (selectedBranch) {
+      localStorage.setItem(`employees_${selectedBranch}`, JSON.stringify(updatedBranchEmployees));
+    }
+  };
+
+  const pendingCount = getEmployeesByStatus('pending').length;
+
   return (
     <div className="admin-dashboard">
       <div className="admin-details">
@@ -322,7 +463,7 @@ const AdminDashboard = () => {
       <div className="main-actions-row">
         {/* Left Column - Available Employees */}
         <div className="action-card employees-card">
-          <h3>Available Employees by Department</h3>
+          <h3>Employee Allocation Management</h3>
           <div className="action-buttons">
             <div className="dropdown-container" ref={dropdownRef}>
               <button 
@@ -395,50 +536,119 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {selectedBranch && (
+            <div className="employee-status-tabs">
+              <div 
+                className={`status-tab ${activeTab === 'pending' ? 'active' : ''}`}
+                onClick={() => setActiveTab('pending')}
+              >
+                Pending <span className="status-count">{getEmployeesByStatus('pending').length}</span>
+                {activeTab !== 'pending' && pendingCount > 0 && (
+                  <span className="pending-indicator" title="Employees need attention">
+                    <FaExclamationCircle />
+                  </span>
+                )}
+              </div>
+              <div 
+                className={`status-tab ${activeTab === 'assigned' ? 'active' : ''}`}
+                onClick={() => setActiveTab('assigned')}
+              >
+                Assigned <span className="status-count">{getEmployeesByStatus('assigned').length}</span>
+              </div>
+              <div 
+                className={`status-tab ${activeTab === 'rejected' ? 'active' : ''}`}
+                onClick={() => setActiveTab('rejected')}
+              >
+                Rejected <span className="status-count">{getEmployeesByStatus('rejected').length}</span>
+              </div>
+            </div>
+          )}
+
           {selectedBranch && filteredEmployees.length > 0 && (
             <div className="employee-table-container">
               <h4>Employee List - {selectedBranch} {filterDate && `(Date: ${filterDate})`}</h4>
               <div className="table-actions">
-                <span className="results-count">{filteredEmployees.length} employees found</span>
+                <span className="results-count">
+                  {activeTab === 'pending' ? 'Pending' : activeTab === 'assigned' ? 'Assigned' : 'Rejected'}: 
+                  {' '}{getEmployeesByStatus(activeTab).length} employees
+                </span>
               </div>
-              <div className="table-wrapper">
-                <table className="employee-table">
-                  <thead>
-                    <tr>
-                      <th onClick={() => requestSort('id')}>
-                        Employee ID {getSortIndicator('id')}
-                      </th>
-                      <th onClick={() => requestSort('name')}>
-                        Name {getSortIndicator('name')}
-                      </th>
-                      <th onClick={() => requestSort('department')}>
-                        Department {getSortIndicator('department')}
-                      </th>
-                      <th onClick={() => requestSort('designation')}>
-                        Designation {getSortIndicator('designation')}
-                      </th>
-                      {branchEmployees.some(emp => emp.date) && (
-                        <th onClick={() => requestSort('date')}>
-                          Date {getSortIndicator('date')}
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredEmployees.map((employee, index) => (
-                      <tr key={index}>
-                        <td>{employee.id || employee.employeeId}</td>
-                        <td>{employee.name}</td>
-                        <td>{employee.department}</td>
-                        <td>{employee.designation}</td>
-                        {branchEmployees.some(emp => emp.date) && (
-                          <td>{employee.date || 'N/A'}</td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              
+              {Object.entries(getGroupedEmployeesByStatus(activeTab)).length > 0 ? (
+                <div className="month-grouped-employees">
+                  {Object.entries(getGroupedEmployeesByStatus(activeTab)).map(([monthYear, employees]) => (
+                    <div key={monthYear} className="month-group">
+                      <div className="month-header">
+                        <h5>{formatMonthYear(monthYear)}</h5>
+                        <span className="month-count">{employees.length} employees</span>
+                      </div>
+                      <div className="table-wrapper">
+                        <table className="employee-table">
+                          <thead>
+                            <tr>
+                              <th>Employee ID</th>
+                              <th>Name</th>
+                              <th>Department</th>
+                              <th>Designation</th>
+                              <th>Date</th>
+                              {activeTab === 'pending' && <th>Actions</th>}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {employees.map((employee, index) => (
+                              <tr key={index}>
+                                <td>{employee.id || employee.employeeId}</td>
+                                <td>{employee.name}</td>
+                                <td>{employee.department}</td>
+                                <td>{employee.designation}</td>
+                                <td>{new Date(employee.date).toLocaleDateString()}</td>
+                                {activeTab === 'pending' && (
+                                  <td className="employee-action-cell">
+                                    <div className="employee-actions">
+                                      <button 
+                                        className="assign-btn" 
+                                        onClick={() => handleAssignEmployee(employee.id || employee.employeeId, employee.date)}
+                                        title="Assign for Exam Duty"
+                                      >
+                                        <FaCheck />
+                                      </button>
+                                      <button 
+                                        className="reject-btn" 
+                                        onClick={() => handleRejectEmployee(employee.id || employee.employeeId, employee.date)}
+                                        title="Reject for Exam Duty"
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </div>
+                                  </td>
+                                )}
+                                {activeTab === 'assigned' && (
+                                  <td className="status-cell">
+                                    <div className="status-indicator">
+                                      <FaCircle className="status-dot assigned" />
+                                    </div>
+                                  </td>
+                                )}
+                                {activeTab === 'rejected' && (
+                                  <td className="status-cell">
+                                    <div className="status-indicator">
+                                      <FaCircle className="status-dot rejected" />
+                                    </div>
+                                  </td>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-data-message">
+                  No {activeTab} employees found for {selectedBranch} {filterDate && `on ${filterDate}`}
+                </div>
+              )}
             </div>
           )}
           
