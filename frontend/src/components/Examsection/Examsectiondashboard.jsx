@@ -1,212 +1,234 @@
-import React, { useState, useEffect } from 'react';
-import { FaDownload } from 'react-icons/fa';
-import './Examsection';
+import React, { useState } from 'react';
+import './Examsectiondashboard.css';
 
 const ExamDashboard = () => {
-  const [activeTab, setActiveTab] = useState('schedule'); // 'schedule' or 'allocation'
-  const [branchData, setBranchData] = useState({});
-  const [hasAllocationData, setHasAllocationData] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
+  // List of all branches
+  const branches = [
+    'CSE',
+    'CSBS',
+    'CSD',
+    'CSE(AI & ML)',
+    'CSE(IOT)',
+    'IT',
+    'ECE',
+    'EEE',
+    'CIVIL',
+    'MECH',
+    'MBA',
+    'MCA'
+  ];
 
-  // Set up the days and periods
-  const days = [1, 2, 3, 4, 5, 6];
-  const periods = ['AM', 'PM'];
-  const branches = ['CSE', 'ECE', 'EEE', 'CIVIL', 'MECH'];
+  // Initial state with empty dates
+  const [examDates, setExamDates] = useState([
+    { date: '', amValues: {}, pmValues: {} }
+  ]);
+  
+  // State to track which fields are currently focused
+  const [focusedFields, setFocusedFields] = useState({});
 
-  // Initialize branch data for all days and periods
-  useEffect(() => {
-    // Initialize branch data with zeros for all days and periods
-    const initialData = {};
+  // Add a new date row
+  const addDateRow = () => {
+    setExamDates([...examDates, { date: '', amValues: {}, pmValues: {} }]);
+  };
+
+  // Remove a date row
+  const removeDateRow = (index) => {
+    if (examDates.length > 1) {
+      setExamDates(examDates.filter((_, i) => i !== index));
+    }
+  };
+
+  // Handle date change
+  const handleDateChange = (index, value) => {
+    const newDates = [...examDates];
+    newDates[index].date = value;
+    setExamDates(newDates);
+  };
+
+  // Set field value
+  const setFieldValue = (dateIndex, session, branch, value) => {
+    // Only allow numeric input
+    if (/^\d*$/.test(value)) {
+      const newDates = [...examDates];
+      if (session === 'AM') {
+        newDates[dateIndex].amValues = {
+          ...newDates[dateIndex].amValues,
+          [branch]: value
+        };
+      } else {
+        newDates[dateIndex].pmValues = {
+          ...newDates[dateIndex].pmValues,
+          [branch]: value
+        };
+      }
+      setExamDates(newDates);
+    }
+  };
+
+  // Handle field focus
+  const handleFocus = (dateIndex, session, branch) => {
+    // Track this field as focused
+    setFocusedFields({
+      ...focusedFields,
+      [`${dateIndex}-${session}-${branch}`]: true
+    });
+  };
+
+  // Handle field blur
+  const handleBlur = (dateIndex, session, branch, value) => {
+    // Mark field as not focused
+    const newFocusedFields = { ...focusedFields };
+    delete newFocusedFields[`${dateIndex}-${session}-${branch}`];
+    setFocusedFields(newFocusedFields);
+
+    // If field is empty after blur, set value to '0'
+    if (value === '') {
+      setFieldValue(dateIndex, session, branch, '0');
+    }
+  };
+
+  // Get display value for an input field
+  const getDisplayValue = (dateIndex, session, branch) => {
+    const values = session === 'AM' 
+      ? examDates[dateIndex].amValues 
+      : examDates[dateIndex].pmValues;
+    
+    const value = values[branch];
+    
+    // If field is focused, show actual value (even if empty)
+    const fieldKey = `${dateIndex}-${session}-${branch}`;
+    if (focusedFields[fieldKey]) {
+      return value || '';
+    }
+    
+    // Otherwise, show '0' for empty or undefined values
+    return value || '0';
+  };
+
+  // Check if a field should use the "default-zero" style
+  const isDefaultZero = (dateIndex, session, branch) => {
+    const values = session === 'AM' 
+      ? examDates[dateIndex].amValues 
+      : examDates[dateIndex].pmValues;
+    
+    const value = values[branch];
+    return !value || value === '0';
+  };
+
+  // Handle form submission
+  const handleUpload = () => {
+    // Calculate total invigilators for each branch
+    const branchData = {};
     branches.forEach(branch => {
-      initialData[branch] = {};
-      days.forEach(day => {
-        periods.forEach(period => {
-          initialData[branch][`Day${day}${period}`] = 0;
-        });
+      let total = 0;
+      examDates.forEach(dateObj => {
+        const amValue = dateObj.amValues[branch] || '0';
+        const pmValue = dateObj.pmValues[branch] || '0';
+        total += parseInt(amValue) + parseInt(pmValue);
       });
+      branchData[branch] = total;
     });
 
-    // Load any existing schedule data from localStorage
-    const storedSchedule = localStorage.getItem('examSchedule');
-    if (storedSchedule) {
-      try {
-        const parsedData = JSON.parse(storedSchedule);
-        setBranchData(parsedData);
-      } catch (error) {
-        console.error('Error parsing stored schedule:', error);
-        setBranchData(initialData);
-      }
-    } else {
-      setBranchData(initialData);
-    }
+    const totalInvigilators = Object.values(branchData).reduce((sum, count) => sum + count, 0);
 
-    // Check if room allocation data exists
-    const allocData = localStorage.getItem('finalRoomAllocation');
-    const timestamp = localStorage.getItem('roomAllocationTimestamp');
-    
-    if (allocData) {
-      setHasAllocationData(true);
-      
-      // Format the timestamp
-      if (timestamp) {
-        const date = new Date(timestamp);
-        setLastUpdated(date.toLocaleString());
-      }
-    }
-  }, []);
+    // Prepare data for storage
+    const dataToStore = {
+      examDates,
+      branchData,
+      totalInvigilators,
+      uploadDate: new Date().toISOString()
+    };
 
-  const handleInputChange = (branch, dayPeriod, value) => {
-    if (/^\d*$/.test(value)) { // Only allow numeric values
-      setBranchData(prev => ({
-        ...prev,
-        [branch]: {
-          ...prev[branch],
-          [dayPeriod]: value === '' ? 0 : parseInt(value, 10)
-        }
-      }));
-    }
-  };
-
-  const handleSubmitSchedule = () => {
-    localStorage.setItem('examSchedule', JSON.stringify(branchData));
-    alert('Schedule saved successfully!');
-  };
-  
-  const handleDownloadRoomAllocation = () => {
-    // Download the room allocation data
-    const allocData = localStorage.getItem('finalRoomAllocation');
-    if (allocData) {
-      const blob = new Blob([allocData], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'room_allocation.csv';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else {
-      alert('No room allocation data available. Please check if admin has uploaded the allocation file.');
-    }
+    localStorage.setItem('invigilatorData', JSON.stringify(dataToStore));
+    alert('Data uploaded successfully!');
   };
 
   return (
     <div className="exam-dashboard-container">
       <div className="exam-dashboard-header">
         <h1>Exam Section Dashboard</h1>
+        <p>Enter Number of Invigilators Required for Each Branch</p>
       </div>
 
-      <div className="dashboard-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'schedule' ? 'active' : ''}`}
-          onClick={() => setActiveTab('schedule')}
-        >
-          Schedule
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'allocation' ? 'active' : ''}`}
-          onClick={() => setActiveTab('allocation')}
-        >
-          <FaDownload /> Final Room Allocation
-        </button>
-      </div>
-
-      {/* Schedule Tab Content */}
-      {activeTab === 'schedule' && (
-        <div className="schedule-content">
-          <p className="tab-description">Enter Number of Invigilators Required for Each Branch</p>
-          
-          <div className="schedule-table-container">
-            <table className="schedule-table">
-              <thead>
-                <tr>
-                  <th>Branch</th>
-                  {days.map(day => (
-                    periods.map(period => (
-                      <th key={`Day${day}${period}`}>Day {day} {period}</th>
-                    ))
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {branches.map(branch => (
-                  <tr key={branch}>
-                    <td className="branch-name">{branch}</td>
-                    {days.map(day => (
-                      periods.map(period => {
-                        const dayPeriodKey = `Day${day}${period}`;
-                        return (
-                          <td key={dayPeriodKey}>
-                            <input
-                              type="text"
-                              value={branchData[branch]?.[dayPeriodKey] || 0}
-                              onChange={(e) => handleInputChange(branch, dayPeriodKey, e.target.value)}
-                              className="schedule-input"
-                            />
-                          </td>
-                        );
-                      })
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <button className="submit-btn" onClick={handleSubmitSchedule}>
-            Submit Schedule
-          </button>
-        </div>
-      )}
-
-      {/* Simple Room Allocation Tab Content */}
-      {activeTab === 'allocation' && (
-        <div className="allocation-content" style={{ textAlign: 'center' }}>
-          <div className="allocation-box" style={{ 
-            background: 'white', 
-            padding: '20px', 
-            borderRadius: '8px', 
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            maxWidth: '600px',
-            margin: '30px auto'
-          }}>
-            <h2>Final Room Allocation from Admin</h2>
-            {lastUpdated && (
-              <p className="last-updated" style={{ fontSize: '0.9rem', color: '#777', fontStyle: 'italic' }}>
-                Last updated: {lastUpdated}
-              </p>
-            )}
-            
-            {hasAllocationData ? (
-              <div>
-                <p>Room allocation data is available for download.</p>
+      <div className="schedule-table-container">
+        <table className="schedule-table">
+          <thead>
+            <tr>
+              <th>Branch</th>
+              {examDates.map((dateObj, index) => (
+                <React.Fragment key={index}>
+                  <th colSpan="2" className="date-column">
+                    <div className="date-picker-container">
+                      <input
+                        type="date"
+                        value={dateObj.date}
+                        onChange={(e) => handleDateChange(index, e.target.value)}
+                        className="date-picker"
+                      />
+                      {examDates.length > 1 && (
+                        <button 
+                          onClick={() => removeDateRow(index)}
+                          className="remove-date-btn"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                    <div className="session-labels">
+                      <span>AM</span>
+                      <span>PM</span>
+                    </div>
+                  </th>
+                </React.Fragment>
+              ))}
+              <th>
                 <button 
-                  className="download-allocation-btn" 
-                  onClick={handleDownloadRoomAllocation}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    margin: '20px auto',
-                    padding: '12px 20px',
-                    background: 'linear-gradient(to right, #2541b2, #4a6bff)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
+                  onClick={addDateRow}
+                  className="add-date-btn"
                 >
-                  <FaDownload /> Download Allocation File
+                  + Add Date
                 </button>
-              </div>
-            ) : (
-              <p>No room allocation data available. Please check if admin has uploaded the allocation file.</p>
-            )}
-          </div>
-        </div>
-      )}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {branches.map(branch => (
+              <tr key={branch}>
+                <td className="branch-name">{branch}</td>
+                {examDates.map((dateObj, dateIndex) => (
+                  <React.Fragment key={dateIndex}>
+                    <td>
+                      <input
+                        type="text"
+                        className={`count-input ${isDefaultZero(dateIndex, 'AM', branch) ? 'default-zero' : 'user-entered'}`}
+                        value={getDisplayValue(dateIndex, 'AM', branch)}
+                        onChange={(e) => setFieldValue(dateIndex, 'AM', branch, e.target.value)}
+                        onFocus={() => handleFocus(dateIndex, 'AM', branch)}
+                        onBlur={(e) => handleBlur(dateIndex, 'AM', branch, e.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        className={`count-input ${isDefaultZero(dateIndex, 'PM', branch) ? 'default-zero' : 'user-entered'}`}
+                        value={getDisplayValue(dateIndex, 'PM', branch)}
+                        onChange={(e) => setFieldValue(dateIndex, 'PM', branch, e.target.value)}
+                        onFocus={() => handleFocus(dateIndex, 'PM', branch)}
+                        onBlur={(e) => handleBlur(dateIndex, 'PM', branch, e.target.value)}
+                      />
+                    </td>
+                  </React.Fragment>
+                ))}
+                <td></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <button className="upload-btn" onClick={handleUpload}>
+        Upload Data
+      </button>
     </div>
   );
 };

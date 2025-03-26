@@ -1,0 +1,134 @@
+.exam-dashboard-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .exam-dashboard-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .exam-dashboard-header h1 {
+    color: #333;
+    margin-bottom: 0.5rem;
+  }
+  
+  .schedule-table-container {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+  }
+  
+  .schedule-table th,
+  .schedule-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .schedule-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+  }
+  
+  .branch-name {
+    font-weight: bold;
+    text-align: left;
+  }
+  
+  .date-column {
+    background-color: #f0f7ff;
+  }
+  
+  .date-picker-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  
+  .date-picker {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .session-labels {
+    display: flex;
+    justify-content: space-around;
+    font-weight: normal;
+    font-size: 14px;
+  }
+  
+  .count-input {
+    width: 60px;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+  }
+  
+  .default-zero {
+    color: #aaa;
+    font-style: italic;
+  }
+  
+  .user-entered {
+    color: black;
+    font-weight: normal;
+  }
+  
+  .add-date-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .add-date-btn:hover {
+    background-color: #45a049;
+  }
+  
+  .remove-date-btn {
+    background-color: transparent;
+    color: #ff5252;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 5px;
+  }
+  
+  .remove-date-btn:hover {
+    color: #ff0000;
+  }
+  
+  .upload-btn {
+    display: block;
+    width: 200px;
+    margin: 0 auto;
+    padding: 1rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .upload-btn:hover {
+    background-color: #45a049;
+  }
