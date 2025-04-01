@@ -1,118 +1,366 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaUpload, FaDownload, FaChevronDown, FaFileUpload, FaFilter, FaSort, FaCalendarAlt, FaCheck, FaTimes, FaCircle, FaExclamationCircle, FaClock } from 'react-icons/fa';
+import { FaUpload, FaDownload, FaFileUpload, FaFilter, FaCalendarAlt, 
+  FaCheck, FaTimes, FaCircle, FaClock, FaEdit, FaCheckDouble } from 'react-icons/fa';
 import './Admindashboard.css';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const initialDataLoaded = useRef(false);
   const admin = JSON.parse(localStorage.getItem('admin'));
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedBranch, setSelectedBranch] = useState(null);
-  const [branchEmployees, setBranchEmployees] = useState([]);
-  const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [activeTab, setActiveTab] = useState('pending');
   const [filterDate, setFilterDate] = useState('');
-  const [filterSession, setFilterSession] = useState(''); // Added session filter
-  const dropdownRef = useRef(null);
+  const [filterSession, setFilterSession] = useState('');
+  const [showFilterOptions, setShowFilterOptions] = useState(false);
+  const [markedEmployees, setMarkedEmployees] = useState({});
+  const [currentStage, setCurrentStage] = useState('selection'); // 'selection', 'review'
   const fileInputRef = useRef(null);
-  
-  // State for rooms dropdown
-  const [showRoomsDropdown, setShowRoomsDropdown] = useState(false);
-  const [selectedBlock, setSelectedBlock] = useState(null);
-  const roomsDropdownRef = useRef(null);
-  
-  // State for file upload
   const [uploadedFile, setUploadedFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
   
-  // State for showing filter options
-  const [showFilterOptions, setShowFilterOptions] = useState(false);
+  // Cache our data to avoid recalculating it repeatedly
+  const [pendingCount, setPendingCount] = useState(0);
+  const [assignedCount, setAssignedCount] = useState(0);
+  const [rejectedCount, setRejectedCount] = useState(0);
   
-  // State for showing employee status tabs
-  const [activeTab, setActiveTab] = useState('pending');
-
-  // Building blocks with static room data
-  const blocks = [
-    { name: 'CB Block', rooms: 15 },
-    { name: 'DG Block', rooms: 12 },
-    { name: 'MN Block', rooms: 10 },
-    { name: 'HT Block', rooms: 8 },
-    { name: 'SJ Block', rooms: 14 }
-  ];
-
-  // Updated branches list to include all departments
+  // All branches
   const branches = [
     'CSE', 'CSBS', 'CSE(DS)', 'CSE(AI&ML)', 'CSE(IOT)', 'IT', 
     'ECE', 'EEE', 'CIVIL', 'MECH', 'Chemical', 'MCA', 'MBA'
   ];
 
+  // State to store all employees data by branch
+  const [allBranchesData, setAllBranchesData] = useState({});
+  
+  // Filtered employees data
+  const [filteredEmployeesData, setFilteredEmployeesData] = useState({});
+
+  // Branch visibility - pre-calculate which branches to show
+  const [branchesToShow, setBranchesToShow] = useState({
+    pending: [],
+    assigned: [],
+    rejected: []
+  });
+
+  // Check if admin is logged in
   useEffect(() => {
     if (!admin) {
       navigate('/admin');
     }
-
-    // Add event listener to handle clicks outside dropdown
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-      if (roomsDropdownRef.current && !roomsDropdownRef.current.contains(event.target)) {
-        setShowRoomsDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [navigate, admin]);
 
+  // Load data ONCE on initial render
   useEffect(() => {
-    // When selected branch changes, reset filter date and apply filtering
-    if (branchEmployees.length > 0) {
-      applyFilters();
-    }
-  }, [branchEmployees]);
+    if (initialDataLoaded.current) return;
 
-  // Group employees by month
-  const getGroupedEmployees = () => {
-    if (!filteredEmployees.length) return {};
+    const branchesData = {};
     
-    // First sort by date (ascending)
-    const sortedByDate = [...filteredEmployees].sort((a, b) => {
-      return new Date(a.date) - new Date(b.date);
+    branches.forEach(branch => {
+      try {
+        const employeeData = localStorage.getItem(`employees_${branch}`);
+        if (employeeData) {
+          const parsedData = JSON.parse(employeeData);
+          
+          // Add status field if not present and ensure session field exists
+          const dataWithStatusAndSession = parsedData.map(emp => ({
+            ...emp,
+            status: emp.status || null, // null = not decided, 'assigned' or 'rejected'
+            session: emp.session || 'AM', // Default to AM if session not specified
+            branch: branch // Add branch for reference
+          }));
+          
+          branchesData[branch] = dataWithStatusAndSession;
+        } else {
+          branchesData[branch] = [];
+        }
+      } catch (error) {
+        console.error(`Error parsing data for branch ${branch}:`, error);
+        branchesData[branch] = [];
+      }
     });
     
-    // Then group by month
-    const grouped = {};
-    sortedByDate.forEach(emp => {
-      if (!emp.date) return;
+    // Set the data only once
+    setAllBranchesData(branchesData);
+    setFilteredEmployeesData(branchesData);
+    initialDataLoaded.current = true;
+  }, []); // Empty dependency array - run only once
+
+  // Update branch visibility and counts whenever filtered data changes
+  useEffect(() => {
+    // Only calculate branch visibility and counts when filtered data is available
+    if (Object.keys(filteredEmployeesData).length === 0) return;
+    
+    // Calculate which branches have employees for each status
+    const pending = [];
+    const assigned = [];
+    const rejected = [];
+    
+    let pendingTotal = 0;
+    let assignedTotal = 0;
+    let rejectedTotal = 0;
+    
+    branches.forEach(branch => {
+      const branchData = filteredEmployeesData[branch] || [];
       
-      const date = new Date(emp.date);
-      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      // Count each type
+      let pendingCount = 0;
+      let assignedCount = 0;
+      let rejectedCount = 0;
       
-      if (!grouped[monthYear]) {
-        grouped[monthYear] = [];
+      branchData.forEach(emp => {
+        if (emp.status === 'assigned') {
+          assignedCount++;
+        } else if (emp.status === 'rejected') {
+          rejectedCount++;
+        } else {
+          pendingCount++;
+        }
+      });
+      
+      // Add branch to list if it has employees of that status
+      if (pendingCount > 0) pending.push(branch);
+      if (assignedCount > 0) assigned.push(branch);
+      if (rejectedCount > 0) rejected.push(branch);
+      
+      // Update totals
+      pendingTotal += pendingCount;
+      assignedTotal += assignedCount;
+      rejectedTotal += rejectedCount;
+    });
+    
+    // Update state with the branches to show
+    setBranchesToShow({
+      pending,
+      assigned,
+      rejected
+    });
+    
+    // Update count states
+    setPendingCount(pendingTotal);
+    setAssignedCount(assignedTotal);
+    setRejectedCount(rejectedTotal);
+  }, [filteredEmployeesData, branches]);
+
+  // Apply filters to all branches
+  const applyFilters = useCallback(() => {
+    const filteredData = {};
+    
+    Object.keys(allBranchesData).forEach(branch => {
+      let filtered = [...allBranchesData[branch]];
+      
+      if (filterDate) {
+        filtered = filtered.filter(emp => emp.date === filterDate);
       }
       
-      grouped[monthYear].push(emp);
+      if (filterSession) {
+        filtered = filtered.filter(emp => emp.session === filterSession);
+      }
+      
+      filteredData[branch] = filtered;
     });
     
-    return grouped;
+    setFilteredEmployeesData(filteredData);
+  }, [allBranchesData, filterDate, filterSession]);
+
+  // Handle date filter change
+  const handleDateFilterChange = (e) => {
+    setFilterDate(e.target.value);
+  };
+  
+  // Handle session filter change
+  const handleSessionFilterChange = (session) => {
+    setFilterSession(session === filterSession ? '' : session); // Toggle if same session clicked
   };
 
-  // Get employees by status (assigned, rejected, pending)
-  const getEmployeesByStatus = (status) => {
-    if (status === 'assigned') {
-      return filteredEmployees.filter(emp => emp.status === 'assigned');
-    } else if (status === 'rejected') {
-      return filteredEmployees.filter(emp => emp.status === 'rejected');
-    } else { // pending
-      return filteredEmployees.filter(emp => emp.status !== 'assigned' && emp.status !== 'rejected');
+  // Apply filters when button is clicked
+  const handleApplyFilters = () => {
+    applyFilters();
+    setShowFilterOptions(false);
+  };
+
+  // Clear filters
+  const handleClearFilters = useCallback(() => {
+    setFilterDate('');
+    setFilterSession('');
+    setFilteredEmployeesData(allBranchesData);
+    setShowFilterOptions(false);
+  }, [allBranchesData]);
+
+  // Get employees by status (for tabs)
+  const getEmployeesByStatus = useCallback((status, branch) => {
+    if (!filteredEmployeesData[branch]) return [];
+    
+    return filteredEmployeesData[branch].filter(emp => {
+      if (status === 'assigned') {
+        return emp.status === 'assigned';
+      } else if (status === 'rejected') {
+        return emp.status === 'rejected';
+      } else { // pending
+        return emp.status !== 'assigned' && emp.status !== 'rejected';
+      }
+    });
+  }, [filteredEmployeesData]);
+
+  // Handle file upload button click
+  const handleUploadButtonClick = () => {
+    fileInputRef.current.click();
+  };
+  
+  // Handle file selection
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setUploadedFile(file);
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const content = e.target.result;
+        
+        try {
+          // Store the allocation data for all users to access
+          localStorage.setItem('finalRoomAllocation', content);
+          
+          // Store upload timestamp
+          localStorage.setItem('roomAllocationTimestamp', new Date().toISOString());
+          
+          setUploadStatus('Room allocation uploaded successfully!');
+        } catch (error) {
+          console.error('Error processing file:', error);
+          setUploadStatus('Error processing file');
+        }
+      };
+      
+      reader.onerror = () => {
+        setUploadStatus('Error reading file');
+      };
+      
+      reader.readAsText(file);
     }
   };
 
-  // Get grouped employees by status
-  const getGroupedEmployeesByStatus = (status) => {
-    const statusEmployees = getEmployeesByStatus(status);
+  // Mark employee for assignment (first level - just visual)
+  const handleMarkForAssignment = useCallback((branch, employeeId, date, session) => {
+    // Create unique key for the employee
+    const key = `${branch}_${employeeId}_${date}_${session}`;
+    
+    setMarkedEmployees(prevMarkedEmployees => {
+      const updatedMarkedEmployees = { ...prevMarkedEmployees };
+      
+      // If already marked as rejected, remove that mark
+      if (updatedMarkedEmployees[key] === 'rejected') {
+        delete updatedMarkedEmployees[key];
+      }
+      
+      // Toggle between unmarked and marked for assignment
+      if (updatedMarkedEmployees[key] === 'forAssignment') {
+        delete updatedMarkedEmployees[key];
+      } else {
+        updatedMarkedEmployees[key] = 'forAssignment';
+      }
+      
+      return updatedMarkedEmployees;
+    });
+  }, []);
+
+  // Mark employee for rejection (first level - just visual)
+  const handleMarkForRejection = useCallback((branch, employeeId, date, session) => {
+    // Create unique key for the employee
+    const key = `${branch}_${employeeId}_${date}_${session}`;
+    
+    setMarkedEmployees(prevMarkedEmployees => {
+      const updatedMarkedEmployees = { ...prevMarkedEmployees };
+      
+      // If already marked as for assignment, remove that mark
+      if (updatedMarkedEmployees[key] === 'forAssignment') {
+        delete updatedMarkedEmployees[key];
+      }
+      
+      // Toggle between unmarked and marked for rejection
+      if (updatedMarkedEmployees[key] === 'rejected') {
+        delete updatedMarkedEmployees[key];
+      } else {
+        updatedMarkedEmployees[key] = 'rejected';
+      }
+      
+      return updatedMarkedEmployees;
+    });
+  }, []);
+
+  // Check if an employee is marked and how
+  const getEmployeeMarkStatus = useCallback((branch, employeeId, date, session) => {
+    const key = `${branch}_${employeeId}_${date}_${session}`;
+    return markedEmployees[key] || null;
+  }, [markedEmployees]);
+
+  // Submit marked employees (go to review)
+  const handleSubmitMarked = () => {
+    // Check if any employees are marked for assignment
+    const markedForAssignment = Object.entries(markedEmployees).filter(([_, status]) => status === 'forAssignment');
+    
+    if (markedForAssignment.length === 0) {
+      alert("Please mark at least one employee for assignment before proceeding.");
+      return;
+    }
+    
+    setCurrentStage('review');
+  };
+
+  // Handle back to selection
+  const handleBackToSelection = () => {
+    setCurrentStage('selection');
+  };
+
+  // Handle final submit
+  const handleFinalSubmit = useCallback(() => {
+    // Update all branches data with the assignments and rejections
+    const updatedBranchesData = { ...allBranchesData };
+    
+    // Process all marked employees
+    Object.entries(markedEmployees).forEach(([key, status]) => {
+      const [branch, employeeId, date, session] = key.split('_');
+      
+      // Find the employee in the branch data
+      updatedBranchesData[branch] = updatedBranchesData[branch].map(emp => {
+        if ((emp.id || emp.employeeId) === employeeId &&
+            emp.date === date &&
+            emp.session === session) {
+          // Update status based on marking
+          return { 
+            ...emp, 
+            status: status === 'forAssignment' ? 'assigned' : 'rejected' 
+          };
+        }
+        return emp;
+      });
+      
+      // Save updated data to localStorage
+      localStorage.setItem(`employees_${branch}`, JSON.stringify(updatedBranchesData[branch]));
+    });
+    
+    // Update state
+    setAllBranchesData(updatedBranchesData);
+    setFilteredEmployeesData(updatedBranchesData);
+    
+    // Clear markings
+    setMarkedEmployees({});
+    
+    // Return to selection stage with success message
+    setCurrentStage('selection');
+    
+    // Show success message
+    alert("Employees have been successfully processed!");
+  }, [allBranchesData, markedEmployees]);
+
+  // Format month year string for display
+  const formatMonthYear = useCallback((monthYearStr) => {
+    const [year, month] = monthYearStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+  }, []);
+
+  // Group employees by month
+  const getGroupedEmployeesByStatus = useCallback((status, branch) => {
+    const statusEmployees = getEmployeesByStatus(status, branch);
     
     // First sort by date (ascending)
     const sortedByDate = [...statusEmployees].sort((a, b) => {
@@ -135,316 +383,470 @@ const AdminDashboard = () => {
     });
     
     return grouped;
-  };
+  }, [getEmployeesByStatus]);
 
-  // Format month year string for display
-  const formatMonthYear = (monthYearStr) => {
-    const [year, month] = monthYearStr.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-  };
-
-  const handleBranchSelect = (branch) => {
-    setSelectedBranch(branch);
-    setIsDropdownOpen(false);
-    setFilterDate('');
-    setFilterSession(''); // Reset session filter
-    setActiveTab('pending'); // Reset tab to pending when changing branch
-
-    // Get employee data for selected branch from localStorage
-    const employeeData = localStorage.getItem(`employees_${branch}`);
-    if (employeeData) {
-      const parsedData = JSON.parse(employeeData);
+  // Get employees marked for assignment grouped by branch
+  const getEmployeesMarkedForAssignmentByBranch = useCallback(() => {
+    const result = {};
+    
+    // Get keys of employees marked for assignment
+    const forAssignmentKeys = Object.entries(markedEmployees)
+      .filter(([_, status]) => status === 'forAssignment')
+      .map(([key]) => key);
+    
+    // Group by branch
+    forAssignmentKeys.forEach(key => {
+      const [branch, employeeId, date, session] = key.split('_');
       
-      // Add status field if not present and ensure session field exists
-      const dataWithStatusAndSession = parsedData.map(emp => ({
-        ...emp,
-        status: emp.status || null, // null = not decided, 'assigned' or 'rejected'
-        session: emp.session || 'AM' // Default to AM if session not specified
-      }));
-      
-      setBranchEmployees(dataWithStatusAndSession);
-      setFilteredEmployees(dataWithStatusAndSession);
-      
-      // Reset sort config when branch changes
-      setSortConfig({ key: null, direction: 'ascending' });
-    } else {
-      setBranchEmployees([]);
-      setFilteredEmployees([]);
-    }
-  };
-
-  const handleDownloadEmployeeList = () => {
-    if (!selectedBranch) {
-      alert('Please select a branch first');
-      return;
-    }
-
-    // Generate CSV with session information
-    const headers = ['ID', 'Name', 'Department', 'Designation', 'Date', 'Session', 'Status'];
-    const csvRows = [
-      headers.join(',')
-    ];
-
-    filteredEmployees.forEach(emp => {
-      const row = [
-        emp.id || emp.employeeId,
-        emp.name,
-        emp.department,
-        emp.designation,
-        emp.date,
-        emp.session || 'AM', // Include session with AM as default
-        emp.status || 'pending'
-      ];
-      csvRows.push(row.join(','));
-    });
-
-    const csvContent = csvRows.join('\n');
-    
-    // Create downloadable blob
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${selectedBranch}_employees_with_sessions.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // Sorting function
-  const requestSort = (key) => {
-    let direction = 'ascending';
-    
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    
-    setSortConfig({ key, direction });
-    
-    const sortedData = [...filteredEmployees].sort((a, b) => {
-      if (a[key] < b[key]) {
-        return direction === 'ascending' ? -1 : 1;
+      if (!result[branch]) {
+        result[branch] = [];
       }
-      if (a[key] > b[key]) {
-        return direction === 'ascending' ? 1 : -1;
+      
+      // Find employee details
+      const employee = filteredEmployeesData[branch]?.find(
+        emp => (emp.id || emp.employeeId) === employeeId &&
+        emp.date === date &&
+        emp.session === session
+      );
+      
+      if (employee) {
+        result[branch].push(employee);
       }
-      return 0;
     });
     
-    setFilteredEmployees(sortedData);
-  };
+    return result;
+  }, [markedEmployees, filteredEmployeesData]);
 
-  // Function to get sort indicator
-  const getSortIndicator = (key) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
-  };
-
-  // Function to apply date filtering
-  const applyFilters = () => {
-    let filtered = [...branchEmployees];
-    
-    if (filterDate) {
-      filtered = filtered.filter(emp => emp.date === filterDate);
-    }
-    
-    if (filterSession) {
-      filtered = filtered.filter(emp => emp.session === filterSession);
-    }
-    
-    setFilteredEmployees(filtered);
-  };
-
-  // Handler for date filter change
-  const handleDateFilterChange = (e) => {
-    setFilterDate(e.target.value);
-  };
-  
-  // Handler for session filter change
-  const handleSessionFilterChange = (session) => {
-    setFilterSession(session === filterSession ? '' : session); // Toggle if same session clicked
-  };
-
-  // Handler to apply filters when button is clicked
-  const handleApplyFilters = () => {
-    applyFilters();
-    setShowFilterOptions(false);
-  };
-
-  // Handler to clear filters
-  const handleClearFilters = () => {
-    setFilterDate('');
-    setFilterSession('');
-    setFilteredEmployees(branchEmployees);
-    setShowFilterOptions(false);
-  };
-
-  // Handlers for rooms dropdown
-  const toggleRoomsDropdown = () => {
-    setShowRoomsDropdown(!showRoomsDropdown);
-  };
-
-  const handleBlockSelect = (block) => {
-    setSelectedBlock(block);
-    
-    // Show block details in a popup
-    showBlockDetails(block);
-  };
-  
-  // Function to display block rooms in a popup
-  const showBlockDetails = (block) => {
-    // Generate room numbers for this block
-    const roomNumbers = [];
-    
-    // Add 3rd floor rooms (301-317) up to the limit for this block
-    for (let i = 301; i <= 317 && i - 300 <= block.rooms; i++) {
-      roomNumbers.push(i);
-    }
-    
-    // Add 4th floor rooms (401-417) up to the limit for this block
-    for (let i = 401; i <= 417 && i - 400 <= block.rooms; i++) {
-      roomNumbers.push(i);
-    }
-    
-    // Create a popup element
-    const popup = document.createElement('div');
-    popup.className = 'block-details-popup';
-    
-    // Create popup content with wrapper
-    popup.innerHTML = `
-      <div class="popup-content-wrapper">
-        <button class="close-btn">&times;</button>
-        <div class="popup-header">
-          <h3>${block.name} Details</h3>
+  // Render tabs with fixed count badges
+  const renderTabs = () => {
+    return (
+      <div className="employee-status-tabs">
+        <div 
+          className={`status-tab ${activeTab === 'pending' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveTab('pending');
+            setCurrentStage('selection'); // Reset to selection stage when switching to pending
+          }}
+        >
+          Pending {pendingCount > 0 && <span className="status-count">{pendingCount}</span>}
         </div>
-        <div class="popup-content">
-          <p><strong>${block.rooms} Rooms Available</strong></p>
-          <p>Each Room: 42 Students</p>
-          <p>Total Capacity: ${block.rooms * 42} Students</p>
-          
-          <div class="room-numbers-section">
-            <h4>Available Rooms:</h4>
-            <div class="room-numbers-grid">
-              ${roomNumbers.map(num => `<div class="room-number">${num}</div>`).join('')}
-            </div>
-          </div>
+        <div 
+          className={`status-tab ${activeTab === 'assigned' ? 'active' : ''}`}
+          onClick={() => setActiveTab('assigned')}
+        >
+          Assigned {assignedCount > 0 && <span className="status-count">{assignedCount}</span>}
+        </div>
+        <div 
+          className={`status-tab ${activeTab === 'rejected' ? 'active' : ''}`}
+          onClick={() => setActiveTab('rejected')}
+        >
+          Rejected {rejectedCount > 0 && <span className="status-count">{rejectedCount}</span>}
         </div>
       </div>
-    `;
-    
-    // Append popup to body
-    document.body.appendChild(popup);
-    
-    // Add event listener to close button
-    const closeBtn = popup.querySelector('.close-btn');
-    closeBtn.addEventListener('click', () => {
-      document.body.removeChild(popup);
-    });
-    
-    // Close popup when clicking outside the content
-    popup.addEventListener('click', (e) => {
-      if (!popup.querySelector('.popup-content-wrapper').contains(e.target)) {
-        document.body.removeChild(popup);
-      }
-    });
+    );
   };
-  
-  // Handler for file upload button click
-  const handleUploadButtonClick = () => {
-    fileInputRef.current.click();
+
+  // Render the pending tab content
+  const renderPendingTab = () => {
+    // Counts for marked employees
+    const markedForAssignmentCount = Object.values(markedEmployees).filter(status => status === 'forAssignment').length;
+    const markedForRejectionCount = Object.values(markedEmployees).filter(status => status === 'rejected').length;
+    
+    // Check if there are any pending employees across all branches
+    if (branchesToShow.pending.length === 0) {
+      return (
+        <div className="no-data-message">
+          No pending employees to show.
+        </div>
+      );
+    }
+    
+    return (
+      <>
+        {/* Filter Controls */}
+        <div className="action-buttons">
+          <button 
+            className="filter-button"
+            onClick={() => setShowFilterOptions(!showFilterOptions)}
+            title="Filter Options"
+          >
+            <FaFilter />
+          </button>
+          
+          <button 
+            className="download-button"
+            onClick={() => {
+              // Generate CSV with all pending employees
+              alert("Downloading pending employees list...");
+            }}
+            title="Download Pending Employees"
+          >
+            <FaDownload />
+          </button>
+        </div>
+
+        {showFilterOptions && (
+          <div className="filter-options">
+            <div className="filter-option">
+              <label><FaCalendarAlt /> Filter by Date:</label>
+              <input 
+                type="date" 
+                value={filterDate} 
+                onChange={handleDateFilterChange}
+              />
+            </div>
+            
+            <div className="filter-option">
+              <label><FaClock /> Filter by Session:</label>
+              <div className="session-filter-buttons">
+                <button 
+                  type="button"
+                  className={`session-filter-btn ${filterSession === 'AM' ? 'active' : ''}`}
+                  onClick={() => handleSessionFilterChange('AM')}
+                >
+                  AM
+                </button>
+                <button 
+                  type="button"
+                  className={`session-filter-btn ${filterSession === 'PM' ? 'active' : ''}`}
+                  onClick={() => handleSessionFilterChange('PM')}
+                >
+                  PM
+                </button>
+              </div>
+            </div>
+            
+            <div className="filter-actions">
+              <button onClick={handleApplyFilters} className="apply-filter-btn">
+                Apply Filters
+              </button>
+              <button onClick={handleClearFilters} className="clear-filter-btn">
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Employee Lists by Branch - FIXED: Only show branches with employees */}
+        <div className="all-branches-container">
+          {branchesToShow.pending.map(branch => (
+            <div key={branch} className="branch-section">
+              <h3 className="branch-title">{branch} Department</h3>
+              
+              {Object.entries(getGroupedEmployeesByStatus('pending', branch)).map(([monthYear, employees]) => (
+                <div key={`${branch}_${monthYear}`} className="month-group">
+                  <div className="month-header">
+                    <h5>{formatMonthYear(monthYear)}</h5>
+                    <span className="month-count">{employees.length} employees</span>
+                  </div>
+                  <div className="table-wrapper">
+                    <table className="employee-table">
+                      <thead>
+                        <tr>
+                          <th>Employee ID</th>
+                          <th>Name</th>
+                          <th>Designation</th>
+                          <th>Date</th>
+                          <th>Session</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {employees.map((employee, index) => {
+                          const markStatus = getEmployeeMarkStatus(
+                            branch, 
+                            employee.id || employee.employeeId, 
+                            employee.date, 
+                            employee.session
+                          );
+                          
+                          return (
+                            <tr 
+                              key={index} 
+                              className={markStatus ? `marked-${markStatus}` : ''}
+                            >
+                              <td>{employee.id || employee.employeeId}</td>
+                              <td>{employee.name}</td>
+                              <td>{employee.designation}</td>
+                              <td>{new Date(employee.date).toLocaleDateString()}</td>
+                              <td>
+                                <span className={`session-badge ${employee.session || 'AM'}`}>
+                                  {employee.session || 'AM'}
+                                </span>
+                              </td>
+                              <td className="status-cell">
+                                {markStatus === 'forAssignment' && (
+                                  <span className="mark-status mark-for-assignment">
+                                    <FaCircle className="status-dot" /> For Assignment
+                                  </span>
+                                )}
+                                {markStatus === 'rejected' && (
+                                  <span className="mark-status mark-for-rejection">
+                                    <FaCircle className="status-dot" /> For Rejection
+                                  </span>
+                                )}
+                                {!markStatus && (
+                                  <span className="mark-status mark-none">
+                                    Not Marked
+                                  </span>
+                                )}
+                              </td>
+                              <td className="employee-action-cell">
+                                <div className="employee-actions">
+                                  <button 
+                                    className={`assign-btn ${markStatus === 'forAssignment' ? 'active' : ''}`}
+                                    onClick={() => handleMarkForAssignment(
+                                      branch, 
+                                      employee.id || employee.employeeId, 
+                                      employee.date, 
+                                      employee.session
+                                    )}
+                                    title="Mark for Assignment"
+                                  >
+                                    <FaCheck />
+                                  </button>
+                                  <button 
+                                    className={`reject-btn ${markStatus === 'rejected' ? 'active' : ''}`}
+                                    onClick={() => handleMarkForRejection(
+                                      branch, 
+                                      employee.id || employee.employeeId, 
+                                      employee.date, 
+                                      employee.session
+                                    )}
+                                    title="Mark for Rejection"
+                                  >
+                                    <FaTimes />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Submit Button (only if employees are marked) */}
+        {(markedForAssignmentCount > 0 || markedForRejectionCount > 0) && (
+          <div className="submit-container">
+            <div className="marked-counts">
+              <div className="marked-count for-assignment">
+                <FaCircle className="status-dot" /> {markedForAssignmentCount} Marked for Assignment
+              </div>
+              <div className="marked-count for-rejection">
+                <FaCircle className="status-dot" /> {markedForRejectionCount} Marked for Rejection
+              </div>
+            </div>
+            <button className="submit-btn first-level" onClick={handleSubmitMarked}>
+              Submit Selection
+            </button>
+          </div>
+        )}
+      </>
+    );
   };
-  
-  // Handler for file selection - Removed constraints
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setUploadedFile(file);
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const content = e.target.result;
+
+  // Render the assigned tab content
+  const renderAssignedTab = () => {
+    // Check if any branches have assigned employees
+    if (branchesToShow.assigned.length === 0) {
+      return (
+        <div className="no-data-message">
+          No employees have been assigned yet.
+        </div>
+      );
+    }
+    
+    return (
+      <div className="all-branches-container">
+        {branchesToShow.assigned.map(branch => (
+          <div key={branch} className="branch-section">
+            <h3 className="branch-title">{branch} Department</h3>
+            
+            {Object.entries(getGroupedEmployeesByStatus('assigned', branch)).map(([monthYear, employees]) => (
+              <div key={`${branch}_${monthYear}`} className="month-group">
+                <div className="month-header">
+                  <h5>{formatMonthYear(monthYear)}</h5>
+                  <span className="month-count">{employees.length} employees</span>
+                </div>
+                <div className="table-wrapper">
+                  <table className="employee-table">
+                    <thead>
+                      <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Date</th>
+                        <th>Session</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.map((employee, index) => (
+                        <tr key={index} className="status-assigned">
+                          <td>{employee.id || employee.employeeId}</td>
+                          <td>{employee.name}</td>
+                          <td>{employee.designation}</td>
+                          <td>{new Date(employee.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`session-badge ${employee.session || 'AM'}`}>
+                              {employee.session || 'AM'}
+                            </span>
+                          </td>
+                          <td className="status-cell">
+                            <span className="status-badge assigned">
+                              <FaCircle className="status-dot" /> Assigned
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Render the rejected tab content
+  const renderRejectedTab = () => {
+    // Check if any branches have rejected employees
+    if (branchesToShow.rejected.length === 0) {
+      return (
+        <div className="no-data-message">
+          No employees have been rejected yet.
+        </div>
+      );
+    }
+    
+    return (
+      <div className="all-branches-container">
+        {branchesToShow.rejected.map(branch => (
+          <div key={branch} className="branch-section">
+            <h3 className="branch-title">{branch} Department</h3>
+            
+            {Object.entries(getGroupedEmployeesByStatus('rejected', branch)).map(([monthYear, employees]) => (
+              <div key={`${branch}_${monthYear}`} className="month-group">
+                <div className="month-header">
+                  <h5>{formatMonthYear(monthYear)}</h5>
+                  <span className="month-count">{employees.length} employees</span>
+                </div>
+                <div className="table-wrapper">
+                  <table className="employee-table">
+                    <thead>
+                      <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Date</th>
+                        <th>Session</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.map((employee, index) => (
+                        <tr key={index} className="status-rejected">
+                          <td>{employee.id || employee.employeeId}</td>
+                          <td>{employee.name}</td>
+                          <td>{employee.designation}</td>
+                          <td>{new Date(employee.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`session-badge ${employee.session || 'AM'}`}>
+                              {employee.session || 'AM'}
+                            </span>
+                          </td>
+                          <td className="status-cell">
+                            <span className="status-badge rejected">
+                              <FaCircle className="status-dot" /> Rejected
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Render the review stage
+  const renderReviewStage = () => {
+    // Get employees marked for assignment
+    const markedEmployeesByBranch = getEmployeesMarkedForAssignmentByBranch();
+    
+    return (
+      <div className="review-stage">
+        <div className="review-header">
+          <h3>Review Marked Employees</h3>
+          <p>Please review the employees you have marked for assignment</p>
+        </div>
         
-        try {
-          // Store the allocation data for all users to access without validation
-          localStorage.setItem('finalRoomAllocation', content);
-          
-          // Store upload timestamp
-          localStorage.setItem('roomAllocationTimestamp', new Date().toISOString());
-          
-          setUploadStatus('Room allocation uploaded successfully!');
-        } catch (error) {
-          console.error('Error processing file:', error);
-          setUploadStatus('Error processing file');
-        }
-      };
-      
-      reader.onerror = () => {
-        setUploadStatus('Error reading file');
-      };
-      
-      reader.readAsText(file);
-    }
+        {Object.keys(markedEmployeesByBranch).length === 0 ? (
+          <div className="no-data-message">
+            No employees have been marked for assignment.
+          </div>
+        ) : (
+          <>
+            {Object.entries(markedEmployeesByBranch).map(([branch, employees]) => (
+              <div key={branch} className="review-branch-section">
+                <h4 className="review-branch-title">{branch} Department</h4>
+                <div className="table-wrapper">
+                  <table className="employee-table">
+                    <thead>
+                      <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Designation</th>
+                        <th>Date</th>
+                        <th>Session</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.map((employee, index) => (
+                        <tr key={index} className="marked-for-assignment">
+                          <td>{employee.id || employee.employeeId}</td>
+                          <td>{employee.name}</td>
+                          <td>{employee.designation}</td>
+                          <td>{new Date(employee.date).toLocaleDateString()}</td>
+                          <td>
+                            <span className={`session-badge ${employee.session || 'AM'}`}>
+                              {employee.session || 'AM'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+            
+            <div className="review-actions">
+              <button className="edit-btn" onClick={handleBackToSelection}>
+                <FaEdit /> Edit Selection
+              </button>
+              <button className="final-submit-btn" onClick={handleFinalSubmit}>
+                <FaCheckDouble /> Final Submit
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
   };
-
-  // Fixed: Modified to only mark specific employee record as assigned/rejected
-  const handleAssignEmployee = (employeeId, date, session) => {
-    // Update branchEmployees
-    const updatedBranchEmployees = branchEmployees.map(emp => {
-      // Match by ID, date AND session to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
-        return { ...emp, status: 'assigned' };
-      }
-      return emp;
-    });
-    setBranchEmployees(updatedBranchEmployees);
-
-    // Update filtered employees
-    const updatedFilteredEmployees = filteredEmployees.map(emp => {
-      // Match by ID, date AND session to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
-        return { ...emp, status: 'assigned' };
-      }
-      return emp;
-    });
-    setFilteredEmployees(updatedFilteredEmployees);
-
-    // Save updated data to localStorage
-    if (selectedBranch) {
-      localStorage.setItem(`employees_${selectedBranch}`, JSON.stringify(updatedBranchEmployees));
-    }
-  };
-
-  // Fixed: Modified to only mark specific employee record as rejected
-  const handleRejectEmployee = (employeeId, date, session) => {
-    // Update branchEmployees
-    const updatedBranchEmployees = branchEmployees.map(emp => {
-      // Match by ID, date AND session to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
-        return { ...emp, status: 'rejected' };
-      }
-      return emp;
-    });
-    setBranchEmployees(updatedBranchEmployees);
-
-    // Update filtered employees
-    const updatedFilteredEmployees = filteredEmployees.map(emp => {
-      // Match by ID, date AND session to only update the specific record
-      if ((emp.id || emp.employeeId) === employeeId && emp.date === date && emp.session === session) {
-        return { ...emp, status: 'rejected' };
-      }
-      return emp;
-    });
-    setFilteredEmployees(updatedFilteredEmployees);
-
-    // Save updated data to localStorage
-    if (selectedBranch) {
-      localStorage.setItem(`employees_${selectedBranch}`, JSON.stringify(updatedBranchEmployees));
-    }
-  };
-  
-  const pendingCount = getEmployeesByStatus('pending').length;
 
   return (
     <div className="admin-dashboard">
@@ -454,274 +856,32 @@ const AdminDashboard = () => {
       </div>
       
       <div className="exam-info">
-        <h2>Regular and supply examination 24-25</h2>
+        <h2>3rd year regular and supply examination 24-25</h2>
         <h3>Room and Staff Allocation</h3>
+        
+        {activeTab === 'pending' && currentStage === 'review' && (
+          <div className="stage-indicator">
+            Review Stage: Confirm Selection
+          </div>
+        )}
       </div>
       
-      {/* Available Rooms Section */}
-      <div className="rooms-dropdown-container" ref={roomsDropdownRef}>
-        <button 
-          className="rooms-dropdown-btn" 
-          onClick={toggleRoomsDropdown}
-          onMouseEnter={() => setShowRoomsDropdown(true)}
-          onMouseLeave={() => setShowRoomsDropdown(false)}
-        >
-          Available Rooms <FaChevronDown />
-          
-          {showRoomsDropdown && (
-            <div 
-              className="rooms-dropdown-content"
-              onMouseEnter={() => setShowRoomsDropdown(true)}
-              onMouseLeave={() => setShowRoomsDropdown(false)}
-            >
-              {blocks.map((block) => (
-                <div 
-                  key={block.name} 
-                  className="block-item"
-                  onClick={() => handleBlockSelect(block)}
-                >
-                  {block.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </button>
-      </div>
-      
-      {/* Main Admin Actions - Now in a single row with two columns */}
+      {/* Main Admin Actions */}
       <div className="main-actions-row">
-        {/* Left Column - Available Employees */}
         <div className="action-card employees-card">
           <h3>Employee Allocation Management</h3>
-          <div className="action-buttons">
-            <div className="dropdown-container" ref={dropdownRef}>
-              <button 
-                className="dropdown-button"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                onMouseEnter={() => setIsDropdownOpen(true)}
-              >
-                {selectedBranch || 'Select Branch'}
-                <FaChevronDown className="dropdown-icon" />
-              </button>
-              
-              {isDropdownOpen && (
-                <div 
-                  className="dropdown-menu"
-                  onMouseLeave={() => setIsDropdownOpen(false)}
-                >
-                  {branches.map((branch) => (
-                    <div
-                      key={branch}
-                      className="dropdown-item"
-                      onClick={() => handleBranchSelect(branch)}
-                    >
-                      {branch}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {selectedBranch && (
-              <>
-                <button 
-                  className="filter-button"
-                  onClick={() => setShowFilterOptions(!showFilterOptions)}
-                  title="Filter Options"
-                >
-                  <FaFilter />
-                </button>
-                
-                <button 
-                  className="download-button"
-                  onClick={handleDownloadEmployeeList}
-                  title="Download Employee List"
-                >
-                  <FaDownload />
-                </button>
-              </>
-            )}
-          </div>
-
-          {showFilterOptions && (
-            <div className="filter-options">
-              <div className="filter-option">
-                <label><FaCalendarAlt /> Filter by Date:</label>
-                <input 
-                  type="date" 
-                  value={filterDate} 
-                  onChange={handleDateFilterChange}
-                />
-              </div>
-              
-              <div className="filter-option">
-                <label><FaClock /> Filter by Session:</label>
-                <div className="session-filter-buttons">
-                  <button 
-                    type="button"
-                    className={`session-filter-btn ${filterSession === 'AM' ? 'active' : ''}`}
-                    onClick={() => handleSessionFilterChange('AM')}
-                  >
-                    AM
-                  </button>
-                  <button 
-                    type="button"
-                    className={`session-filter-btn ${filterSession === 'PM' ? 'active' : ''}`}
-                    onClick={() => handleSessionFilterChange('PM')}
-                  >
-                    PM
-                  </button>
-                </div>
-              </div>
-              
-              <div className="filter-actions">
-                <button onClick={handleApplyFilters} className="apply-filter-btn">
-                  Apply Filters
-                </button>
-                <button onClick={handleClearFilters} className="clear-filter-btn">
-                  Clear Filters
-                </button>
-              </div>
-            </div>
-          )}
-
-          {selectedBranch && (
-            <div className="employee-status-tabs">
-              <div 
-                className={`status-tab ${activeTab === 'pending' ? 'active' : ''}`}
-                onClick={() => setActiveTab('pending')}
-              >
-                Pending <span className="status-count">{getEmployeesByStatus('pending').length}</span>
-                {activeTab !== 'pending' && pendingCount > 0 && (
-                  <span className="pending-indicator" title="Employees need attention">
-                    <FaExclamationCircle />
-                  </span>
-                )}
-              </div>
-              <div 
-                className={`status-tab ${activeTab === 'assigned' ? 'active' : ''}`}
-                onClick={() => setActiveTab('assigned')}
-              >
-                Assigned <span className="status-count">{getEmployeesByStatus('assigned').length}</span>
-              </div>
-              <div 
-                className={`status-tab ${activeTab === 'rejected' ? 'active' : ''}`}
-                onClick={() => setActiveTab('rejected')}
-              >
-                Rejected <span className="status-count">{getEmployeesByStatus('rejected').length}</span>
-              </div>
-            </div>
-          )}
-
-          {selectedBranch && filteredEmployees.length > 0 && (
-            <div className="employee-table-container">
-              <h4>
-                Employee List - {selectedBranch} 
-                {filterDate && ` (Date: ${filterDate})`}
-                {filterSession && ` (Session: ${filterSession})`}
-              </h4>
-              <div className="table-actions">
-                <span className="results-count">
-                  {activeTab === 'pending' ? 'Pending' : activeTab === 'assigned' ? 'Assigned' : 'Rejected'}: 
-                  {' '}{getEmployeesByStatus(activeTab).length} employees
-                </span>
-              </div>
-              
-              {Object.entries(getGroupedEmployeesByStatus(activeTab)).length > 0 ? (
-                <div className="month-grouped-employees">
-                  {Object.entries(getGroupedEmployeesByStatus(activeTab)).map(([monthYear, employees]) => (
-                    <div key={monthYear} className="month-group">
-                      <div className="month-header">
-                        <h5>{formatMonthYear(monthYear)}</h5>
-                        <span className="month-count">{employees.length} employees</span>
-                      </div>
-                      <div className="table-wrapper">
-                        <table className="employee-table">
-                          <thead>
-                            <tr>
-                              <th>Employee ID</th>
-                              <th>Name</th>
-                              <th>Department</th>
-                              <th>Designation</th>
-                              <th>Date</th>
-                              <th>Session</th>
-                              {activeTab === 'pending' && <th>Actions</th>}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {employees.map((employee, index) => (
-                              <tr key={index}>
-                                <td>{employee.id || employee.employeeId}</td>
-                                <td>{employee.name}</td>
-                                <td>{employee.department}</td>
-                                <td>{employee.designation}</td>
-                                <td>{new Date(employee.date).toLocaleDateString()}</td>
-                                <td>
-                                  <span className={`session-badge ${employee.session || 'AM'}`}>
-                                    {employee.session || 'AM'}
-                                  </span>
-                                </td>
-                                {activeTab === 'pending' && (
-                                  <td className="employee-action-cell">
-                                    <div className="employee-actions">
-                                      <button 
-                                        className="assign-btn" 
-                                        onClick={() => handleAssignEmployee(employee.id || employee.employeeId, employee.date, employee.session || 'AM')}
-                                        title="Assign for Exam Duty"
-                                      >
-                                        <FaCheck />
-                                      </button>
-                                      <button 
-                                        className="reject-btn" 
-                                        onClick={() => handleRejectEmployee(employee.id || employee.employeeId, employee.date, employee.session || 'AM')}
-                                        title="Reject for Exam Duty"
-                                      >
-                                        <FaTimes />
-                                      </button>
-                                    </div>
-                                  </td>
-                                )}
-                                {activeTab === 'assigned' && (
-                                  <td className="status-cell">
-                                    <div className="status-indicator">
-                                      <FaCircle className="status-dot assigned" />
-                                    </div>
-                                  </td>
-                                )}
-                                {activeTab === 'rejected' && (
-                                  <td className="status-cell">
-                                    <div className="status-indicator">
-                                      <FaCircle className="status-dot rejected" />
-                                    </div>
-                                  </td>
-                                )}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="no-data-message">
-                  No {activeTab} employees found for {selectedBranch} {filterDate && `on ${filterDate}`} {filterSession && `for ${filterSession} session`}
-                </div>
-              )}
-            </div>
-          )}
           
-          {selectedBranch && filteredEmployees.length === 0 && (
-            <div className="no-data-message">
-              {filterDate || filterSession ? 
-                `No employee data available for ${selectedBranch}${filterDate ? ` on ${filterDate}` : ''}${filterSession ? ` for ${filterSession} session` : ''}` : 
-                `No employee data available for ${selectedBranch}`
-              }
-            </div>
-          )}
+          {/* Status Tabs */}
+          {renderTabs()}
+          
+          {/* Tab Content */}
+          {activeTab === 'pending' && currentStage === 'selection' && renderPendingTab()}
+          {activeTab === 'pending' && currentStage === 'review' && renderReviewStage()}
+          {activeTab === 'assigned' && renderAssignedTab()}
+          {activeTab === 'rejected' && renderRejectedTab()}
         </div>
         
-        {/* Right Column - Final Room Allocation */}
+        {/* Final Room Allocation */}
         <div className="action-card allocation-card">
           <h3>Final Room Allocation</h3>
           <p className="allocation-description">
